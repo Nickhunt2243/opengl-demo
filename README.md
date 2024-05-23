@@ -12,6 +12,43 @@ Before you can build and run this project, you need to have the following librar
 - **GLM**: Version 1.0.1
 - **GLFW**: Version 3.4
 - **GLAD**: Generated version 0.1.36 from [GLAD generator](https://glad.dav1d.de/)
+- 
+### Project Structure
+
+The project directory structure is organized as follows:
+
+```
+OpenGLDemo/
+├── includes/
+│   ├── GLFW/
+│   │   ├── includes/
+│   │   │   └── <GLFW include files>
+│   │   └── lib-vc2022/
+│   │       └── <GLFW library files>
+│   ├── GLM/
+│   └── GLAD/
+│       ├── include/
+│       └── src/
+├── src/
+│   ├── shaders/
+│   │   ├── default.vert
+│   │   └── default.frag
+│   ├── main.cpp
+│   ├── ...
+├── CMakeLists.txt
+├── README.md
+└── ...
+```
+### Setting Up GLFW
+
+To ensure GLFW is correctly integrated into your project, follow these steps:
+
+1. **Download GLFW**: 
+   - Obtain the GLFW library from the [official website](https://www.glfw.org/download.html).
+
+2. **Organize the Files**:
+   - Move the include files from the GLFW package into `includes/GLFW/includes/`.
+   - Move the library files for your Visual Studio version (e.g., `lib-vc2022`) into `includes/GLFW/lib-vc2022/`.
 
 ### Building the Project
 
@@ -33,7 +70,7 @@ Before you can build and run this project, you need to have the following librar
    ```bash
    mkdir build
    cd build
-   cmake .. -G "Visual Studio 17 2022"
+   cmake .. -G "Visual Studio 17 2022" [or whichever Visual Studio version you have.]
    ```
 
 4. **Build the Project**
@@ -44,11 +81,21 @@ Before you can build and run this project, you need to have the following librar
 
    ```bash
    cmake --build .
+   cd ../Debug
+   OpenGLDemo.exe
    ```
 
 ### Running the Project
 
-After successfully building the project, you can run the executable. The application should open a window and render the scene as described in the code.
+After successfully building the project, you can run the executable. The application should open a window and render the scene with a massive cube in front of you.
+
+You can use:
+- w &#8594; Walk Forward
+- s &#8594; Walk Backwards
+- a &#8594; Walk Left
+- d &#8594; Walk Right
+
+Additionally you can use the mouse to look around.
 
 ### Project Structure
 
