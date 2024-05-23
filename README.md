@@ -12,7 +12,7 @@ Before you can build and run this project, you need to have the following librar
 - **GLM**: Version 1.0.1
 - **GLFW**: Version 3.4
 - **GLAD**: Generated version 0.1.36 from [GLAD generator](https://glad.dav1d.de/)
-- 
+  
 ### Project Structure
 
 The project directory structure is organized as follows:
