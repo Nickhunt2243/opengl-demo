@@ -16,10 +16,10 @@ namespace Engine
         float s=-0.5f;
         float inc= 1.0f / (float) subdivisions;
         float r, n;
-        for (int i=0; i<subdivisions; i++)
+        for (unsigned int i=0; i<subdivisions; i++)
         {
             r = i * inc;
-            for (int h=0; h<subdivisions; h++)
+            for (unsigned int h=0; h<subdivisions; h++)
             {
                 n = h * inc;
                 // Back

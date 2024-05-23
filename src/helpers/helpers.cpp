@@ -1,7 +1,8 @@
-#include <fstream>
-#include <sstream>
-#include <iostream>
 #include <glm/gtc/type_ptr.hpp>
+#include <sstream>
+#include <fstream>
+#include <iostream>
+#include <filesystem>
 
 #include "helpers.hpp"
 
@@ -9,7 +10,9 @@ namespace Helpers
 {
     std::string getFileContents(const char* path)
     {
-        std::ifstream file(path);
+        std::filesystem::path current_path = std::filesystem::current_path();
+        std::filesystem::path file_path = current_path.parent_path() / path;
+        std::ifstream file(file_path);
         if (!file.is_open())
         {
             std::cerr << "Failed to open file: " << path << std::endl;
@@ -22,11 +25,13 @@ namespace Helpers
     bool endsWith(const std::string& s, const std::string& ending)
     {
         if (ending.size() > s.size()) return false;
-        auto sIter = s.end() - 1;
-        auto eIter = ending.end() - 1;
+        auto sIter = std::prev(s.end(), 1);
+        auto eIter = std::prev(ending.end(), 1);
 
-        while (eIter >= ending.begin())
+        while (eIter > ending.begin())
         {
+            std::cout << s << std::endl;
+            std::cout << ending << std::endl;
             if (*sIter != *eIter)
             {
                 return false;

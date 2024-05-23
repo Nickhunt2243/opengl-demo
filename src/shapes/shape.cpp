@@ -8,7 +8,7 @@ namespace Engine
             float x2, float y2, float z2
         )
     {
-        unsigned int nVerts = Shape::vertices.size() / 3;
+        unsigned int nVerts = (unsigned int) (Shape::vertices.size() / 3);
 
         // First verts
         Shape::vertices.push_back(x0); Shape::bary.push_back(1.0);

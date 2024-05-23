@@ -18,8 +18,8 @@ Before you can build and run this project, you need to have the following librar
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/your-username/OpenGLDemo.git
-   cd OpenGLDemo
+   git clone https://github.com/Nickhunt2243/opengl-demo.git
+   cd opengl-demo
    ```
 
 2. **Install Dependencies**
@@ -33,7 +33,7 @@ Before you can build and run this project, you need to have the following librar
    ```bash
    mkdir build
    cd build
-   cmake .. -G "Visual Studio 16 2019"
+   cmake .. -G "Visual Studio 17 2022"
    ```
 
 4. **Build the Project**

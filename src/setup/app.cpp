@@ -51,7 +51,7 @@ namespace Engine
         initViewModel();
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        bindVAO(indices.data(), indices.size(), vertices.data(), vertices.size());
+        bindVAO(indices.data(), (GLuint) indices.size(), vertices.data(), (GLuint) vertices.size());
         return true;
     }
     void Application::run()
