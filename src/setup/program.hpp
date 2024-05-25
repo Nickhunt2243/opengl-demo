@@ -7,7 +7,7 @@ namespace Engine
     class Program
     {
     public:
-        explicit Program(std::string vShader, std::string fShader);
+        explicit Program(std::string vShader, std::string gShader, std::string fShader);
         ~Program();
         /**
          * Retrieve the OpenGL program.
@@ -28,10 +28,14 @@ namespace Engine
     private:
         /// The path of the vertex shader.
         std::string vertexShaderName;
+        /// The path of the geometry shader.
+        std::string geometryShaderName;
         /// The path of the fragment shader.
         std::string fragmentShaderName;
         /// The identifier of the vertex shader.
         GLint vertShader{0};
+        /// The identifier of the geometry shader.
+        GLint geomShader{0};
         /// The identifier of the fragment shader.
         GLint fragShader{0};
         /// The identifier of the OpenGL program.

@@ -57,6 +57,14 @@ namespace Engine
         {
             cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraWalkingSpeed;
         }
+        if (glfwGetKey(window->getWindow(), GLFW_KEY_SPACE) == GLFW_PRESS)
+        {
+            cameraPos += glm::vec3(0.0f, 1.0f, 0.0f) * cameraWalkingSpeed;
+        }
+        if (glfwGetKey(window->getWindow(), GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+        {
+            cameraPos += glm::vec3(0.0f, -1.0f, 0.0f) * cameraWalkingSpeed;
+        }
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         Helpers::setMat4(program->getProgram(), "u_viewT", view);
     }
@@ -76,9 +84,8 @@ namespace Engine
         Camera::lastX = static_cast<float>(xpos);
         Camera::lastY = static_cast<float>(ypos);
 
-        float sensitivity = 0.1f;
-        xoffset *= sensitivity;
-        yoffset *= sensitivity;
+        xoffset *= camera->sensitivity;
+        yoffset *= camera->sensitivity;
 
         Camera::yaw += xoffset;
         Camera::pitch += yoffset;

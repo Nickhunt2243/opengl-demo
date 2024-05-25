@@ -10,13 +10,14 @@
 #define WINDOW_WIDTH 1000
 #define WINDOW_HEIGHT 1000
 #define VERT_SHADER_PATH "src/shader/default.vert"
+#define GEOM_SHADER_PATH "src/shader/default.geom"
 #define FRAG_SHADER_PATH "src/shader/default.frag"
 
 namespace Engine
 {
     Application::Application()
         : window(WINDOW_WIDTH, WINDOW_HEIGHT, "OpenGL")
-        , program(VERT_SHADER_PATH, FRAG_SHADER_PATH)
+        , program(VERT_SHADER_PATH, GEOM_SHADER_PATH, FRAG_SHADER_PATH)
         , camera{&window, &program}
         , cube{20}
     {}
@@ -39,8 +40,8 @@ namespace Engine
             return false;
         }
         program.useProgram();
-        std::vector<float> vertices = cube.getVertices();
-        std::vector<unsigned int> indices = cube.getIndices();
+//        std::vector<float> vertices = cube.getVertices();
+//        std::vector<unsigned int> indices = cube.getIndices();
 
         std::cout << "Initializing Camera." << std::endl;
         if (!camera.initCamera())
@@ -51,7 +52,13 @@ namespace Engine
         initViewModel();
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        bindVAO(indices.data(), (GLuint) indices.size(), vertices.data(), (GLuint) vertices.size());
+
+        std::vector<float>vertices = {
+                -0.6f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.0f,
+                0.6f, 0.0f, 0.0f,
+        };
+        bindVAO(vertices.data(), (GLuint) vertices.size());
         return true;
     }
     void Application::run()
@@ -66,18 +73,13 @@ namespace Engine
             // Update State
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
-            auto timeValue = (float) glfwGetTime();
-            float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
-            float redValue = (cos(timeValue) / 2.0f) + 0.5f;
-            float blueValue = (cos(timeValue) / 2.0f) + 0.5f;
-            glUniform4f(vertexColorLocation, redValue, greenValue, blueValue, 1.0f);
             // Display State
             draw();
             glfwSwapBuffers(window.getWindow());
             glfwPollEvents();
         }
     }
-    void Application::bindVAO(GLuint* indices, GLuint indexCount, float* vertices, GLuint vertexCount)
+    void Application::bindVAO(float* vertices, GLuint vertexCount)
     {
         GLuint aPosIndex = 0;
         // Generate Buffers
@@ -91,19 +93,21 @@ namespace Engine
         glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(float), vertices, GL_STATIC_DRAW);
         glEnableVertexAttribArray(aPosIndex);
         glVertexAttribPointer(aPosIndex, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+
+
         // Bind and initialize the EBO
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+//        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+//        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), indices, GL_STATIC_DRAW);
         // Unbind all buffers
         glBindVertexArray(0); // Unbind VAO
         glBindBuffer(GL_ARRAY_BUFFER, 0); // Unbind VBO
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // Unbind EBO
+//        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // Unbind EBO
     }
     void Application::draw() const
     {
         int numIndices = (int) cube.getIndices().size();
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
+        glDrawArrays(GL_POINTS, 0, 3);
     }
     void printMatrix4x4(glm::mat4& mat, const std::string& name)
     {
