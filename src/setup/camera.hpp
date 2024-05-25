@@ -50,7 +50,9 @@ namespace Engine
         /// A pointer to a program object.
         Program* program;
         /// The walking speed of the camera.
-        float cameraWalkingSpeed{0.04f};
+        float cameraWalkingSpeed{0.03f};
+        /// The sensitivity of the camera.
+        float sensitivity{0.05f};
         /// The 3x1 vector describing the cameras current position.
         glm::vec3 cameraPos{glm::vec3(0.0f, 0.0f,  3.0f)};
         /// The 3x1 vector describing the cameras front direction.

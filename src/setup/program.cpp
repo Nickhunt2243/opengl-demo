@@ -6,8 +6,9 @@
 
 namespace Engine
 {
-    Program::Program(std::string vShader, std::string fShader)
+    Program::Program(std::string vShader, std::string gShader, std::string fShader)
         : vertexShaderName( std::move(vShader) )
+        , geometryShaderName( std::move(gShader) )
         , fragmentShaderName( std::move(fShader) )
     {};
 
@@ -15,6 +16,7 @@ namespace Engine
     {
         glDeleteProgram(program);
         glDeleteShader(vertShader);
+        glDeleteShader(geomShader);
         glDeleteShader(fragShader);
     }
     unsigned int Program::getProgram() const
@@ -36,12 +38,20 @@ namespace Engine
         int success;
         char infoLog[512];
         bool isVertShader = Helpers::endsWith(shaderPath, ".vert");
+        bool isGeomShader = Helpers::endsWith(shaderPath, ".geom");
+
         GLint shader;
         if (isVertShader)
         {
-            std::cout << "Generating Vertex Shader: " << shaderPath << std::endl;
+            std::cout << "Generating Geometry Shader: " << shaderPath << std::endl;
             vertShader = glCreateShader(GL_VERTEX_SHADER);
             shader = vertShader;
+        }
+        else if (isGeomShader)
+        {
+            std::cout << "Generating Geometry Shader: " << shaderPath << std::endl;
+            geomShader = glCreateShader(GL_GEOMETRY_SHADER);
+            shader = geomShader;
         }
         else
         {
@@ -57,6 +67,8 @@ namespace Engine
             glGetShaderInfoLog(shader, 512, nullptr, infoLog);
             std::string msg = isVertShader
                               ? "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
+                              : isGeomShader
+                              ? "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n"
                               : "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n";
             std::cerr << msg << infoLog << std::endl;
             return false;
@@ -69,10 +81,12 @@ namespace Engine
     {
         program = glCreateProgram();
         if (!genShader(vertexShaderName)) return false;
+        if (!genShader(geometryShaderName)) return false;
         if (!genShader(fragmentShaderName)) return false;
         int success;
         char infoLog[512];
         glAttachShader(program, vertShader);
+        glAttachShader(program, geomShader);
         glAttachShader(program, fragShader);
         glLinkProgram(program);
         glGetProgramiv(program, GL_LINK_STATUS, &success);
