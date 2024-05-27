@@ -34,8 +34,10 @@ namespace Engine
          *  - S: Move backward
          *  - A: Move left
          *  - D: Move right
+         *
+         *  @return True if camera updated else false
          */
-        void updateCamera();
+        bool updateCamera();
         /**
          * Callback for handling mouse movement for looking around.
          *

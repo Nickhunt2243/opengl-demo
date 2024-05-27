@@ -5,7 +5,7 @@
 #include "program.hpp"
 #include "camera.hpp"
 #include "../shapes/cube.hpp."
-
+#include "../craft/world.hpp"
 namespace Engine
 {
     class Application
@@ -33,14 +33,14 @@ namespace Engine
         /// The camera object of the application.
         Camera camera;
         /// The cube shape to be rendered.
-        Cube cube;
+        Craft::World world;
         /// The Vertex Array Object of the OpenGL program.
         GLuint VAO{0},
         /// The Vertex Buffer Object of the OpenGL program.
                VBO{0},
         /// The Element Buffer Object of the OpenGL program.
                EBO{0};
-
+        static std::unordered_map<std::string, std::string> texMap;
         /**
          * Bind the vertices and indices to the buffers to be sent to the shaders for rendering.
          *

@@ -39,7 +39,7 @@ namespace Engine
         return true;
     }
 
-    void Camera::updateCamera()
+    bool Camera::updateCamera()
     {
         if (glfwGetKey(window->getWindow(), GLFW_KEY_W) == GLFW_PRESS)
         {
@@ -66,7 +66,10 @@ namespace Engine
             cameraPos += glm::vec3(0.0f, -1.0f, 0.0f) * cameraWalkingSpeed;
         }
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-        Helpers::setMat4(program->getProgram(), "u_viewT", view);
+        if (!Helpers::setMat4(program->getProgram(), "u_viewT", view)) {
+            return false;
+        }
+        return true;
     }
 
     void Camera::mouse_movement_callback(GLFWwindow* window, double xpos, double ypos)

@@ -59,8 +59,9 @@ namespace Helpers {
      * @param program: The given OpenGL program identifier.
      * @param name:    The name of the shader parameter.
      * @param value:   The value to set.
+     * @return         True if mat4 was set, else false
      */
-    void setMat4(GLuint program, const std::string &name, glm::mat4& value);
+    bool setMat4(GLuint program, const std::string &name, glm::mat4& value);
 }
 
 

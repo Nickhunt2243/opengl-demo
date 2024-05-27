@@ -30,8 +30,6 @@ namespace Helpers
 
         while (eIter > ending.begin())
         {
-            std::cout << s << std::endl;
-            std::cout << ending << std::endl;
             if (*sIter != *eIter)
             {
                 return false;
@@ -48,6 +46,7 @@ namespace Helpers
         if (loc == -1)
         {
             std::cout << "Failed to find location: " << name << std::endl;
+            return -1;
         }
         return loc;
     }
@@ -71,9 +70,13 @@ namespace Helpers
         GLint loc = getLoc(program, name);
         glUniform4fv(loc, 1, value);
     }
-    void setMat4(GLuint program, const std::string &name, glm::mat4& value)
+    bool setMat4(GLuint program, const std::string &name, glm::mat4& value)
     {
         GLint loc = getLoc(program, name);
+        if (loc == -1) {
+            return false;
+        }
         glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(value));
+        return true;
     }
 }

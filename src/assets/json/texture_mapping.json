@@ -1,0 +1,10 @@
+{
+  "grass": {
+    "top": "src/assets/textures/grass_block/grass_block_top.png",
+    "bottom": "src/assets/textures/grass_block/dirt.png",
+    "front": "src/assets/textures/grass_block/grass_block_side.png",
+    "right": "src/assets/textures/grass_block/grass_block_side.png",
+    "back": "src/assets/textures/grass_block/grass_block_side.png",
+    "left": "src/assets/textures/grass_block/grass_block_side.png"
+  }
+}
