@@ -37,23 +37,7 @@ namespace Engine
         /// The Vertex Array Object of the OpenGL program.
         GLuint VAO{0},
         /// The Vertex Buffer Object of the OpenGL program.
-               VBO{0},
-        /// The Element Buffer Object of the OpenGL program.
-               EBO{0};
-        static std::unordered_map<std::string, std::string> texMap;
-        /**
-         * Bind the vertices and indices to the buffers to be sent to the shaders for rendering.
-         *
-         * @param indices:     The pointer to the array of indices. (Not currently used due to geometry shader).
-         * @param indexCount:  The number of indices. (Not currently used due to geometry shader).
-         * @param vertices:    The pointer to the array of vertices.
-         * @param vertexCount: The number of vertices.
-         */
-        void bindVAO(float* vertices, GLuint vertexCount);
-        /// Bind the VAO and draw the elements.
-        void draw() const;
-        /// Construct the 4x4 Projection matrix and 4x4 Model matrix and send them to the shaders for rendering.
-        void initViewModel();
+               VBO{0};
     };
 }
 

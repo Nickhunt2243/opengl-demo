@@ -1,0 +1,26 @@
+{
+  "grass": {
+    "top": "src/assets/textures/grass_block/grass_block_top.png",
+    "bottom": "src/assets/textures/grass_block/dirt.png",
+    "front": "src/assets/textures/grass_block/grass_block_side.png",
+    "right": "src/assets/textures/grass_block/grass_block_side.png",
+    "back": "src/assets/textures/grass_block/grass_block_side.png",
+    "left": "src/assets/textures/grass_block/grass_block_side.png"
+  },
+  "stone": {
+    "top": "src/assets/textures/stone/stone.png",
+    "bottom": "src/assets/textures/stone/stone.png",
+    "front": "src/assets/textures/stone/stone.png",
+    "right": "src/assets/textures/stone/stone.png",
+    "back": "src/assets/textures/stone/stone.png",
+    "left": "src/assets/textures/stone/stone.png"
+  },
+  "dirt": {
+    "top": "src/assets/textures/grass_block/dirt.png",
+    "bottom": "src/assets/textures/grass_block/dirt.png",
+    "front": "src/assets/textures/grass_block/dirt.png",
+    "right": "src/assets/textures/grass_block/dirt.png",
+    "back": "src/assets/textures/grass_block/dirt.png",
+    "left": "src/assets/textures/grass_block/dirt.png"
+  }
+}

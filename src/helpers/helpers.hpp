@@ -4,6 +4,9 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <string>
+#include <stb/stb_image.h>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace Helpers {
     /**
@@ -13,6 +16,18 @@ namespace Helpers {
      * @return      A string of the contents.
      */
     std::string getFileContents(const char* path);
+    struct ImageData
+    {
+        int width;
+        int height;
+        int nrChannels;
+        unsigned char* data;
+
+        ~ImageData() {
+            stbi_image_free(data);
+        }
+    };
+    ImageData* getImageContents(const std::string& texturePath);
     /**
      * Retrieve whether the string s ends with the char sequence of ending.
      *
@@ -52,7 +67,7 @@ namespace Helpers {
      * @param name:    The name of the shader parameter.
      * @param value:   The value to set.
      */
-    void setVec4(GLuint program, const std::string &name, float* value);
+    void setVec4(GLuint program, const std::string &name, glm::vec4 value);
     /**
      * Set a 4x4 matrix within the OpenGL program.
      *
@@ -62,6 +77,15 @@ namespace Helpers {
      * @return         True if mat4 was set, else false
      */
     bool setMat4(GLuint program, const std::string &name, glm::mat4& value);
+    /**
+     * Print a 4x4 matrix for debugging.
+     *
+     * @param mat:  The matrix to be printed.
+     * @param name: The Name/Desc of the matrix.
+     */
+    [[maybe_unused]] void printMatrix4x4(glm::mat4& mat, const std::string& name);
+    template <typename K, typename V>
+    std::unordered_set<K> createSetFromMapKeys(const std::unordered_map<K, V>& map);
 }
 
 

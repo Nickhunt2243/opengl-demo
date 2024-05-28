@@ -5,87 +5,74 @@
 #include <iostream>
 
 #include "app.hpp"
-#include "../craft/block.hpp"
-#include "../helpers/helpers.hpp"
+#include "../craft/textures.hpp"
 
-#define WINDOW_WIDTH 1000
+#define WINDOW_WIDTH 1500
 #define WINDOW_HEIGHT 1000
 #define VERT_SHADER_PATH "src/shader/default.vert"
 #define GEOM_SHADER_PATH "src/shader/default.geom"
 #define FRAG_SHADER_PATH "src/shader/default.frag"
-#define TOP_TEX_PATH  "src/assets/textures/grass_block/grass_block_top.png"
-#define BOTTOM_TEX_PATH  "src/assets/textures/grass_block/dirt.png"
-#define SIDE_TEX_PATH  "src/assets/textures/grass_block/grass_block_side.png"
-
 
 
 namespace Engine
 {
-    std::unordered_map<std::string, std::string> Application::texMap {
-        {"grass_top", TOP_TEX_PATH},
-        {"grass_bottom", BOTTOM_TEX_PATH},
-        {"grass_side", SIDE_TEX_PATH}
-    };
     Application::Application()
         : window(WINDOW_WIDTH, WINDOW_HEIGHT, "OpenGL")
-        , program(VERT_SHADER_PATH, GEOM_SHADER_PATH, FRAG_SHADER_PATH, Application::texMap)
-        , camera{&window, &program}
+        , program(VERT_SHADER_PATH, GEOM_SHADER_PATH, FRAG_SHADER_PATH)
+        , camera{&window, &program, WINDOW_WIDTH, WINDOW_HEIGHT}
         , world()
     {}
     Application::~Application()
     {
         glDeleteVertexArrays(1, &(VAO));
         glDeleteBuffers(1, &(VBO));
-        glDeleteBuffers(1, &(EBO));
     }
     bool Application::initialize()
     {
         std::cout << "Initializing Window." << std::endl;
         if (!window.initWindow())
         {
+            std::cerr << "Failed to initialize window." << std::endl;
             return false;
         }
         std::cout << "Initializing Program." << std::endl;
         if (!program.initProgram())
         {
+            std::cerr << "Failed to initialize program." << std::endl;
             return false;
         }
+
         program.useProgram();
+
         // Init VAO and VBO
         glGenVertexArrays(1, &VAO);
-        glCreateBuffers(1, &VBO);
+        glBindVertexArray(VAO);
+        glGenBuffers(1, &VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glEnableVertexAttribArray(0);
         // init world
-        world.initializeWorld(VAO, VBO);
-
+        world.initWorld(program.getProgram());
+        world.findNeighbors();
         std::cout << "Initializing Camera." << std::endl;
         if (!camera.initCamera())
         {
             return false;
         }
-        std::cout << "Initializing View." << std::endl;
-        initViewModel();
+
+        glUniform1i(glGetUniformLocation(program.getProgram(), "textures[0]"), 0);
+        glUniform1i(glGetUniformLocation(program.getProgram(), "textures[1]"), 1);
+        glUniform1i(glGetUniformLocation(program.getProgram(), "textures[2]"), 2);
+        glUniform1i(glGetUniformLocation(program.getProgram(), "textures[3]"), 3);
+        glUniform1i(glGetUniformLocation(program.getProgram(), "textures[4]"), 4);
+        glUniform1i(glGetUniformLocation(program.getProgram(), "textures[5]"), 5);
 
         glPolygonMode(GL_FRONT_AND_BACK , GL_FILL);
 
-        std::vector<float>vertices = {
-                -1.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 0.0f,
-                1.0f, 0.0f, 0.0f,
-                -1.0f, 0.0f, -1.0f,
-                0.0f, 0.0f, -1.0f,
-                1.0f, 0.0f, -1.0f,
-                -1.0f, 0.0f, 1.0f,
-                0.0f, 0.0f, 1.0f,
-                1.0f, 0.0f, 1.0f,
-        };
-//        bindVAO(vertices.data(), (GLuint) vertices.size());
         return true;
     }
     void Application::run()
     {
         std::cout << "Running..." << std::endl;
-        GLint vertexColorLocation = glGetUniformLocation(program.getProgram(), "u_ourColor");
-        program.useProgram();
         while (!window.shouldClose())
         {
             // Process Input
@@ -93,37 +80,16 @@ namespace Engine
                 return;
             }
             // Update State
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClearColor(0.5f, 0.5f, 0.7f, 1.0f);
             // Clear the color and depth buffers
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             // Display State
-            world.drawWorld();
+            if (!world.drawWorld()) {
+                std::cerr << "Failed to draw scene." << std::endl;
+                return;
+            }
             glfwSwapBuffers(window.getWindow());
             glfwPollEvents();
         }
     }
-    void printMatrix4x4(glm::mat4& mat, const std::string& name)
-    {
-        std::cout << "\n" << name << " Matrix:" << std::endl;
-        std::cout << "{\n\t";
-        glm::mat4 trans = glm::transpose(mat);
-        for (int i=0; i<16;i++)
-        {
-            std::cout << glm::value_ptr(trans)[i] << " ";
-            if (i % 4 == 3 && i != 15) std::cout << "\n\t";
-        }
-        std::cout << "\n}" << std::endl;
-    }
-    void Application::initViewModel()
-    {
-        // Projection Matrix
-        glm::mat4 projMatrix = glm::perspective(glm::radians(45.0f), (float) WINDOW_WIDTH / (float) WINDOW_HEIGHT, 0.1f, 30.0f);
-        // Model Matrix (for demo)
-        glm::mat4 modelMatrix{1.0f};
-        modelMatrix = glm::scale(modelMatrix, glm::vec3{1.0f, 1.0f, 1.0f});
-
-        Helpers::setMat4(program.getProgram(), "u_projT", projMatrix);
-        Helpers::setMat4(program.getProgram(), "u_modelT", modelMatrix);
-    }
-
 }

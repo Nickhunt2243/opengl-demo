@@ -6,44 +6,39 @@
 #define OPENGLDEMO_BLOCK_HPP
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 
-using json = nlohmann::json;
+#include "types.hpp"
+#include "../setup/program.hpp"
+#include "coordinate.hpp"
 
 namespace Craft
 {
     class Block
     {
     public:
-        Block(float x, float y, float z, std::string blockType, GLuint VAO, GLuint VBO);
+        Block(
+                Coordinate& coord,
+                std::string& blockType,
+                GLuint program,
+                const blockTexture& textures
+        );
         ~Block() = default;
         void defineSides();
         bool draw();
+        void setHasNeighbors(const HasNeighbors& neighbors);
     private:
+        HasNeighbors hasNeighbors{};
         std::string blockType;
         std::string textureLocation;
-        GLuint topTexture;
-        GLuint bottomTexture;
-        GLuint frontTexture;
-        GLuint rightTexture;
-        GLuint backTexture;
-        GLuint leftTexture;
-        GLuint VAO;
-        GLuint VBO;
-        static json textureMapping;
-        static GLuint aPosIndex;
-        std::vector<float> position;
-        bool initTextures();
-        static GLuint initTexture(
-                const std::string& textureName,
-                const std::string& texturePath
-        );
-        void bindVAO(float* vertices, GLuint vertexCount)
+        GLuint program;
+        blockTexture textures;
+        Coordinate position;
+
+        void sendNeighborData() const;
+        void activateTextures() const;
     };
-
-
 }
 
 #endif //OPENGLDEMO_BLOCK_HPP

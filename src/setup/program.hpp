@@ -11,8 +11,7 @@ namespace Engine
         explicit Program(
                 std::string vShader,
                 std::string gShader,
-                std::string fShader,
-                std::unordered_map<std::string, std::string>& texPathMap
+                std::string fShader
             );
         ~Program();
         /**
@@ -48,10 +47,6 @@ namespace Engine
         GLint fragShader{0};
         /// The identifier of the OpenGL program.
         GLuint program{0};
-        /// Mapping of texture names to identifier in OpenGL
-        std::unordered_map<std::string, GLint> textures;
-        bool activateTexture(const std::string& textureName);
-        bool createTexture(const std::string& textureName, const std::string& texturePath);
         /**
          * Compile the shader code given a path.
          *

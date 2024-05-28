@@ -12,7 +12,9 @@ Before you can build and run this project, you need to have the following librar
 - **GLM**: Version 1.0.1
 - **GLFW**: Version 3.4
 - **GLAD**: Generated version 0.1.36 from [GLAD generator](https://glad.dav1d.de/)
-- 
+- **nlohmann_json**: Version 3.11.3 (just the json.h)
+- **stb_image**: Version 2.29 
+
 ### Project Structure
 
 The project directory structure is organized as follows:
@@ -30,25 +32,17 @@ OpenGLDemo/
 │       ├── include/
 │       └── src/
 ├── src/
+|   ├── assets/
+|   ├── craft/
+|   |   └── ... Game related files.
+│   ├── setup/
+|   |   └── ... OpenGL and GLFW configuration and set up.
 │   ├── shaders/
-│   │   ├── default.vert
-│   │   └── default.frag
-│   ├── main.cpp
-│   ├── ...
+│   └── main.cpp
 ├── CMakeLists.txt
 ├── README.md
 └── ...
 ```
-### Setting Up GLFW
-
-To ensure GLFW is correctly integrated into your project, follow these steps:
-
-1. **Download GLFW**: 
-   - Obtain the GLFW library from the [official website](https://www.glfw.org/download.html).
-
-2. **Organize the Files**:
-   - Move the include files from the GLFW package into `includes/GLFW/includes/`.
-   - Move the library files for your Visual Studio version (e.g., `lib-vc2022`) into `includes/GLFW/lib-vc2022/`.
 
 ### Building the Project
 
@@ -94,6 +88,8 @@ You can use:
 - s &#8594; Walk Backwards
 - a &#8594; Walk Left
 - d &#8594; Walk Right
+- space &#8594; Go up
+- left shift &#8594; Go down
 
 Additionally you can use the mouse to look around.
 
@@ -104,7 +100,7 @@ The project is organized into the following main components:
 - **helpers**: Helper functions to be used globally.
 - **setup**: Code for setting up and running the application (may change name in future).
 - **shaders**: The GLSL Shaders used. May add additional folders to group various shaders as I move through chapters.
-- **shapes**: Code for generating various shapes.
+- **craft**: This folder will contain all code needed for generating the minecraft-like world.
 
 ### Example Usage
 

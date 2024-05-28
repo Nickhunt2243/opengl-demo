@@ -5,7 +5,12 @@
 #ifndef OPENGLDEMO_WORLD_HPP
 #define OPENGLDEMO_WORLD_HPP
 
+#include <unordered_map>
+#include <functional>
+
 #include "block.hpp"
+#include "textures.hpp"
+#include "coordinate.hpp"
 
 namespace Craft
 {
@@ -15,10 +20,14 @@ namespace Craft
         World() = default;
         ~World() = default;
 
-        bool initializeWorld(GLuint VAO, GLuint VBO);
+        void initWorld(GLuint program);
         bool drawWorld();
+        void findNeighbors();
     private:
-        Block* block;
+        Textures textures{};
+        std::unordered_map<Coordinate, Block> blocks{};
+
+        void initBlock( std::string blockType, GLuint program, float x, float y, float z);
     };
 }
 
