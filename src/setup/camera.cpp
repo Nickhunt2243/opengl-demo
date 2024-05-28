@@ -13,12 +13,12 @@ namespace Engine
     float Camera::yaw = -90.0f;
     float Camera::pitch = 0.0f;
 
-    Camera::Camera(Window* window, Program* program)
+    Camera::Camera(Window* window, Program* program, unsigned int width, unsigned int height)
             : window(window)
             , program(program)
+            , windowWidth(width)
+            , windowHeight(height)
     {}
-
-    Camera::~Camera() = default;
 
     bool Camera::initCamera()
     {
@@ -27,6 +27,13 @@ namespace Engine
             std::cerr << "Window or Program not initialized" << std::endl;
             return false;
         }
+
+        // Initialize the Proj and Model matrices. These do not change.
+        glm::mat4 projMatrix = glm::perspective(glm::radians(45.0f), (float) windowWidth / (float) windowHeight, 0.1f, 100.0f);
+        glm::mat4 modelMatrix{1.0f};
+        modelMatrix = glm::scale(modelMatrix, glm::vec3{1.0f});
+        Helpers::setMat4(program->getProgram(), "u_projT", projMatrix);
+        Helpers::setMat4(program->getProgram(), "u_modelT", modelMatrix);
 
         Helpers::setMat4(program->getProgram(), "u_viewT", view);
         int width, height;
@@ -39,7 +46,7 @@ namespace Engine
         return true;
     }
 
-    void Camera::updateCamera()
+    bool Camera::updateCamera()
     {
         if (glfwGetKey(window->getWindow(), GLFW_KEY_W) == GLFW_PRESS)
         {
@@ -66,12 +73,15 @@ namespace Engine
             cameraPos += glm::vec3(0.0f, -1.0f, 0.0f) * cameraWalkingSpeed;
         }
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-        Helpers::setMat4(program->getProgram(), "u_viewT", view);
+        if (!Helpers::setMat4(program->getProgram(), "u_viewT", view)) {
+            return false;
+        }
+        return true;
     }
 
     void Camera::mouse_movement_callback(GLFWwindow* window, double xpos, double ypos)
     {
-        Camera* camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
+        auto camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
         if (Camera::firstMouse)
         {
             Camera::lastX = static_cast<float>(xpos);

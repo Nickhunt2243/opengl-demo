@@ -1,13 +1,18 @@
 #ifndef OPENGLDEMO_PROGRAM_HPP
 #define OPENGLDEMO_PROGRAM_HPP
 #include <string>
+#include <unordered_map>
 
 namespace Engine
 {
     class Program
     {
     public:
-        explicit Program(std::string vShader, std::string gShader, std::string fShader);
+        explicit Program(
+                std::string vShader,
+                std::string gShader,
+                std::string fShader
+            );
         ~Program();
         /**
          * Retrieve the OpenGL program.
@@ -32,6 +37,8 @@ namespace Engine
         std::string geometryShaderName;
         /// The path of the fragment shader.
         std::string fragmentShaderName;
+        /// A vector containing paths to all texture files.
+        std::unordered_map<std::string, std::string> texturePathsMap;
         /// The identifier of the vertex shader.
         GLint vertShader{0};
         /// The identifier of the geometry shader.

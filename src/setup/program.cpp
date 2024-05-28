@@ -3,10 +3,13 @@
 
 #include "program.hpp"
 #include "../helpers/helpers.hpp"
-
 namespace Engine
 {
-    Program::Program(std::string vShader, std::string gShader, std::string fShader)
+    Program::Program(
+            std::string vShader,
+            std::string gShader,
+            std::string fShader
+        )
         : vertexShaderName( std::move(vShader) )
         , geometryShaderName( std::move(gShader) )
         , fragmentShaderName( std::move(fShader) )
@@ -27,6 +30,7 @@ namespace Engine
     {
         glUseProgram(program);
     }
+
     bool Program::genShader(const std::string& shaderPath)
     {
         std::string shaderSource = Helpers::getFileContents(shaderPath.c_str());
@@ -83,6 +87,7 @@ namespace Engine
         if (!genShader(vertexShaderName)) return false;
         if (!genShader(geometryShaderName)) return false;
         if (!genShader(fragmentShaderName)) return false;
+
         int success;
         char infoLog[512];
         glAttachShader(program, vertShader);
@@ -95,8 +100,22 @@ namespace Engine
             std::cerr << "OpenGL Error: " << glGetError() << std::endl;
             std::cerr << "Failed to link the program." << std::endl;
             glGetProgramInfoLog(program, 512, nullptr, infoLog);
+            std::cerr << "Link info: " << infoLog << std::endl;
             return false;
         }
+        glUseProgram(program);
+        // Enable Depth testing
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
+        // Enable face culling
+//        glEnable(GL_CULL_FACE);
+//        glCullFace(GL_BACK);
+//        glFrontFace(GL_CCW);
+        // Clear the buffers
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+
         return true;
     }
 }

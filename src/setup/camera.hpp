@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "./window.hpp"
 #include "./program.hpp"
@@ -18,8 +19,8 @@ namespace Engine
          * @param window:  A pointer to the Window object.
          * @param program: A pointer to the Program object.
          */
-        Camera(Window* window, Program* program);
-        ~Camera();
+        Camera(Window* window, Program* program, unsigned int width, unsigned int height);
+        ~Camera() = default;
         /**
          * Initialize the camera object's fields.
          *
@@ -34,8 +35,10 @@ namespace Engine
          *  - S: Move backward
          *  - A: Move left
          *  - D: Move right
+         *
+         *  @return True if camera updated else false
          */
-        void updateCamera();
+        bool updateCamera();
         /**
          * Callback for handling mouse movement for looking around.
          *
@@ -50,9 +53,12 @@ namespace Engine
         /// A pointer to a program object.
         Program* program;
         /// The walking speed of the camera.
-        float cameraWalkingSpeed{0.03f};
+        float cameraWalkingSpeed{0.1f};
         /// The sensitivity of the camera.
-        float sensitivity{0.05f};
+        float sensitivity{0.075f};
+        ///
+        unsigned int windowWidth,
+                     windowHeight;
         /// The 3x1 vector describing the cameras current position.
         glm::vec3 cameraPos{glm::vec3(0.0f, 0.0f,  3.0f)};
         /// The 3x1 vector describing the cameras front direction.
