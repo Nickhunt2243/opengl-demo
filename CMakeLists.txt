@@ -24,14 +24,12 @@ message(STATUS ${SOURCES})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 # Add GLAD source files
-set(GLAD_SOURCES ${GLAD_PATH}/src/glad.c
-        src/craft/block.hpp
-        src/craft/block.cpp
-        src/helpers/threadPool.hpp
-        src/craft/coordinate.hpp
-        src/craft/types.cpp)
+set(GLAD_SOURCES ${GLAD_PATH}/src/glad.c)
 
 add_executable(OpenGLDemo ${SOURCES} ${GLAD_SOURCES})
+
+# Set specific output directory for the executable to bin/
+#set_target_properties(OpenGLDemo PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 # Link the GLFW library
 target_link_libraries(OpenGLDemo glfw3 ${OPENGL_LIBRARIES})
@@ -40,3 +38,8 @@ if (MSVC)
     # Ignore specific default libraries
     set_target_properties(OpenGLDemo PROPERTIES LINK_FLAGS "/NODEFAULTLIB:MSVCRT")
 endif()
+
+add_custom_command(TARGET OpenGLDemo POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:OpenGLDemo> ${CMAKE_SOURCE_DIR}/bin/$<TARGET_FILE_NAME:OpenGLDemo>
+)
+
