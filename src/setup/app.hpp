@@ -4,8 +4,8 @@
 #include "window.hpp"
 #include "program.hpp"
 #include "camera.hpp"
-#include "../shapes/cube.hpp."
-#include "../craft/world.hpp"
+#include "../craft/chunk.hpp"
+#include "../craft/textures.hpp"
 namespace Engine
 {
     class Application
@@ -33,11 +33,11 @@ namespace Engine
         /// The camera object of the application.
         Camera camera;
         /// The cube shape to be rendered.
-        Craft::World world;
-        /// The Vertex Array Object of the OpenGL program.
-        GLuint VAO{0},
-        /// The Vertex Buffer Object of the OpenGL program.
-               VBO{0};
+        std::vector<Craft::Chunk*> chunks;
+        /// The pointer to the textures object, holding all information on the generated textures.
+        Craft::Textures* textures{nullptr};
+        /// The unordered set of hashed coordinates.
+        std::unordered_set<size_t> coords{};
     };
 }
 

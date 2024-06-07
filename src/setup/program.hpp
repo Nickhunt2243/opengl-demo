@@ -9,17 +9,17 @@ namespace Engine
     {
     public:
         explicit Program(
-                std::string vShader,
-                std::string gShader,
-                std::string fShader
-            );
+            std::string vShader,
+            std::string gShader,
+            std::string fShader
+        );
         ~Program();
         /**
          * Retrieve the OpenGL program.
          *
          * @return The Identifier of the OpenGL program
          */
-        unsigned int getProgram() const;
+        [[nodiscard]] GLuint getProgram() const;
         /// Use the specified OpenGL Program.
         void useProgram() const;
         /**
@@ -27,7 +27,7 @@ namespace Engine
          *
          * Creates an OpenGL program, compiles and attaches the specified shaders, and finally links the program.
          *
-         * @return
+         * @return: True if the program was initialized, else False.
          */
         bool initProgram();
     private:
@@ -56,7 +56,6 @@ namespace Engine
          * @return            true if successful else false.
          */
         bool genShader(const std::string& shaderPath);
-
     };
 }
 #endif //OPENGLDEMO_PROGRAM_HPP

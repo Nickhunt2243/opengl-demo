@@ -1,5 +1,5 @@
 //
-// Created by admin on 5/27/2024.
+// Created by admin on 6/6/2024.
 //
 
 #ifndef OPENGLDEMO_COORDINATE_HPP
@@ -8,30 +8,70 @@
 
 namespace Craft
 {
-    class Coordinate
+    /// A struct containing coordinate information for a given block.
+    struct Coordinate
     {
-    public:
+        Coordinate(
+                float x, float y, float z
+            ) : x{x}, y{y}, z{z}
+        {}
+        /// The x position of the object.
+        float x;
+        /// The y position of the object.
+        float y;
+        /// The z position of the object.
+        float z;
 
-        Coordinate(float x, float y, float z);
-        explicit operator float*();
-        [[nodiscard]] float getX() const;
-        [[nodiscard]] float getY() const;
-        [[nodiscard]] float getZ() const;
-        Coordinate add(float dX, float dY, float dZ) const;
-        bool operator==(const Coordinate& other) const;
-    private:
-        float x, y, z;
+        /**
+         * A helper function for finding the hashed value of a coordinate with the offset of dX, dY, dZ.
+         *
+         * Used for finding neighbors efficiently.
+         *
+         * @param dX: The X offset.
+         * @param dY: The Y offset.
+         * @param dZ: The Z offset.
+         * @return
+         */
+        [[nodiscard]] size_t add(float dX, float dY, float dZ) const
+        {
+            size_t hx = std::hash<float>()(x+dX);
+            size_t hy = std::hash<float>()(y+dY);
+            size_t hz = std::hash<float>()(z+dZ);
+            return hx ^ (hy << 1) ^ (hz << 2); // Combine the hashes
+        }
     };
 }
 
-namespace std {
+
+namespace std
+{
+    /**
+     * A function for determining the hash of a Coordinate pointer.
+     */
     template<>
-    struct hash<Craft::Coordinate> {
-        size_t operator()(const Craft::Coordinate &coord) const {
-            size_t hx = hash<float>()(coord.getX());
-            size_t hy = hash<float>()(coord.getY());
-            size_t hz = hash<float>()(coord.getZ());
+    struct hash<Craft::Coordinate*>
+    {
+        size_t operator()(const Craft::Coordinate* coord) const
+        {
+            if (coord == nullptr) return 0;
+            size_t hx = hash<float>()(coord->x);
+            size_t hy = hash<float>()(coord->y);
+            size_t hz = hash<float>()(coord->z);
             return hx ^ (hy << 1) ^ (hz << 2); // Combine the hashes
+        }
+    };
+    /**
+     * A function for determining equality of coordinate pointers.
+     */
+    template<>
+    struct equal_to<Craft::Coordinate*>
+    {
+        bool operator()(const Craft::Coordinate* lhs, const Craft::Coordinate* rhs) const
+        {
+            if (lhs == nullptr || rhs == nullptr) return lhs == rhs;
+            return lhs->x == rhs->x &&
+                   lhs->y == rhs->y &&
+                   lhs->z == rhs->z;
         }
     };
 }

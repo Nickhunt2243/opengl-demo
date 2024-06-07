@@ -22,7 +22,7 @@ namespace Engine
         glDeleteShader(geomShader);
         glDeleteShader(fragShader);
     }
-    unsigned int Program::getProgram() const
+    GLuint Program::getProgram() const
     {
         return program;
     }
@@ -30,10 +30,9 @@ namespace Engine
     {
         glUseProgram(program);
     }
-
     bool Program::genShader(const std::string& shaderPath)
     {
-        std::string shaderSource = Helpers::getFileContents(shaderPath.c_str());
+        std::string shaderSource = getFileContents(shaderPath.c_str());
         if (shaderSource.empty())
         {
             std::cerr << "Shader contains no content: " << shaderPath << std::endl;
@@ -41,13 +40,13 @@ namespace Engine
         const char* shaderSrc = shaderSource.c_str();
         int success;
         char infoLog[512];
-        bool isVertShader = Helpers::endsWith(shaderPath, ".vert");
-        bool isGeomShader = Helpers::endsWith(shaderPath, ".geom");
+        bool isVertShader = endsWith(shaderPath, ".vert");
+        bool isGeomShader = endsWith(shaderPath, ".geom");
 
         GLint shader;
         if (isVertShader)
         {
-            std::cout << "Generating Geometry Shader: " << shaderPath << std::endl;
+            std::cout << "Generating Vertex Shader: " << shaderPath << std::endl;
             vertShader = glCreateShader(GL_VERTEX_SHADER);
             shader = vertShader;
         }
@@ -77,7 +76,6 @@ namespace Engine
             std::cerr << msg << infoLog << std::endl;
             return false;
         }
-
         return true;
     }
 
@@ -85,13 +83,11 @@ namespace Engine
     {
         program = glCreateProgram();
         if (!genShader(vertexShaderName)) return false;
-        if (!genShader(geometryShaderName)) return false;
         if (!genShader(fragmentShaderName)) return false;
 
         int success;
         char infoLog[512];
         glAttachShader(program, vertShader);
-        glAttachShader(program, geomShader);
         glAttachShader(program, fragShader);
         glLinkProgram(program);
         glGetProgramiv(program, GL_LINK_STATUS, &success);
@@ -104,18 +100,17 @@ namespace Engine
             return false;
         }
         glUseProgram(program);
+        // Enable 3D Texturing
+        glEnable(GL_TEXTURE_2D_ARRAY);
         // Enable Depth testing
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
         // Enable face culling
-//        glEnable(GL_CULL_FACE);
-//        glCullFace(GL_BACK);
-//        glFrontFace(GL_CCW);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glFrontFace(GL_CCW);
         // Clear the buffers
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-
         return true;
     }
 }

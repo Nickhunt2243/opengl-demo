@@ -1,17 +1,16 @@
 #version 460 core
-in GS_OUT
-{
-    vec2 v_TexCoord;
-    flat int currTex;
-} fs_in;
+in vec2 texCoords;
+in vec4 colorMap;
+in flat float currTex;
 
-uniform sampler2D textures[6];
-uniform vec4 u_textureColorMapping[6];
+uniform sampler2DArray textures;
+uniform sampler2DArray colorMaps;
 
 out vec4 FragColor;
+vec4 hello;
 
 void main()
 {
-    vec4 texColor = texture(textures[fs_in.currTex], fs_in.v_TexCoord);
-    FragColor = vec4(u_textureColorMapping[fs_in.currTex].rgb * texColor.rgb, 1.0);
+    vec4 texColor = texture(textures, vec3(texCoords, currTex));
+    FragColor = vec4(colorMap.rgb * texColor.rgb, 1.0);
 }

@@ -8,7 +8,7 @@ Welcome to the OpenGL Demo project! This project is a learning exercise inspired
 
 Before you can build and run this project, you need to have the following libraries installed:
 
-- **OpenGL**: Version 4.6
+- **OpenGL**: Version 3.3
 - **GLM**: Version 1.0.1
 - **GLFW**: Version 3.4
 - **GLAD**: Generated version 0.1.36 from [GLAD generator](https://glad.dav1d.de/)
@@ -35,6 +35,7 @@ OpenGLDemo/
 |   ├── assets/
 |   ├── craft/
 |   |   └── ... Game related files.
+|   ├── helpers/
 │   ├── setup/
 |   |   └── ... OpenGL and GLFW configuration and set up.
 │   ├── shaders/
@@ -91,7 +92,7 @@ You can use:
 - space &#8594; Go up
 - left shift &#8594; Go down
 
-Additionally you can use the mouse to look around.
+Additionally, you can use the mouse to look around.
 
 ### Project Structure
 
@@ -101,6 +102,7 @@ The project is organized into the following main components:
 - **setup**: Code for setting up and running the application (may change name in future).
 - **shaders**: The GLSL Shaders used. May add additional folders to group various shaders as I move through chapters.
 - **craft**: This folder will contain all code needed for generating the minecraft-like world.
+- **helpers**: This folder will contain helper headers and cpp files that will be used throughout the project.
 
 ### Example Usage
 

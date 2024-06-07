@@ -30,12 +30,8 @@ namespace Engine
 
         // Initialize the Proj and Model matrices. These do not change.
         glm::mat4 projMatrix = glm::perspective(glm::radians(45.0f), (float) windowWidth / (float) windowHeight, 0.1f, 100.0f);
-        glm::mat4 modelMatrix{1.0f};
-        modelMatrix = glm::scale(modelMatrix, glm::vec3{1.0f});
-        Helpers::setMat4(program->getProgram(), "u_projT", projMatrix);
-        Helpers::setMat4(program->getProgram(), "u_modelT", modelMatrix);
-
-        Helpers::setMat4(program->getProgram(), "u_viewT", view);
+        setMat4(program->getProgram(), "u_projT", projMatrix);
+        setMat4(program->getProgram(), "u_viewT", view);
         int width, height;
         glfwGetWindowSize(window->getWindow(), &width, &height);
         Camera::lastX = static_cast<float>(width) / 2.0f;
@@ -73,26 +69,26 @@ namespace Engine
             cameraPos += glm::vec3(0.0f, -1.0f, 0.0f) * cameraWalkingSpeed;
         }
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-        if (!Helpers::setMat4(program->getProgram(), "u_viewT", view)) {
+        if (!setMat4(program->getProgram(), "u_viewT", view)) {
             return false;
         }
         return true;
     }
 
-    void Camera::mouse_movement_callback(GLFWwindow* window, double xpos, double ypos)
+    void Camera::mouse_movement_callback(GLFWwindow* window, double xPos, double yPos)
     {
         auto camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
         if (Camera::firstMouse)
         {
-            Camera::lastX = static_cast<float>(xpos);
-            Camera::lastY = static_cast<float>(ypos);
+            Camera::lastX = static_cast<float>(xPos);
+            Camera::lastY = static_cast<float>(yPos);
             Camera::firstMouse = false;
         }
 
-        float xoffset = static_cast<float>(xpos) - Camera::lastX;
-        float yoffset = Camera::lastY - static_cast<float>(ypos);
-        Camera::lastX = static_cast<float>(xpos);
-        Camera::lastY = static_cast<float>(ypos);
+        float xoffset = static_cast<float>(xPos) - Camera::lastX;
+        float yoffset = Camera::lastY - static_cast<float>(yPos);
+        Camera::lastX = static_cast<float>(xPos);
+        Camera::lastY = static_cast<float>(yPos);
 
         xoffset *= camera->sensitivity;
         yoffset *= camera->sensitivity;

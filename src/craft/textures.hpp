@@ -22,22 +22,35 @@ namespace Craft
     public:
         Textures() = default;
         ~Textures();
-
-        bool initTextures();
-        blockTexture getTexture(std::string& name);
-
+        /**
+         * Initialize the textures of the program.
+         *
+         * Textures are defined through the assets/json/texture_mapping.json file.
+         * This file allows us to easily manage which files go to which block types and side combinations.
+         *
+         * @param program: The program to attach the textures to.
+         * @return:        True if the textures were initialize, else False.
+         */
+        bool initTextures(GLuint program);
+        /**
+         * Retrieve the texture struct of a given block type.
+         *
+         * @param type: The enum type of the block.
+         * @return:     A blockTexture struct.
+         */
+        [[nodiscard]] blockTexture getTexture(BlockType type) const;
     private:
-        GLuint initTextureFromData(Helpers::ImageData* imageData);
-        std::unordered_map<std::string, blockTexture> textureMapping{};
-        textureData* initTextureData(
-                json currTexture,
-                const std::string& blockType,
-                const std::string& textureName
-            );
-        GLuint initTexture(
-                const std::string& textureName,
-                const std::string& texturePath
-        );
+        /**
+         * Initialize the image data into a Sampler2DArray object where each layer is a different texture.
+         *
+         * @param imageData: A mapping of file paths to ImageLoadResult structs
+         * @return:          The GLuint of the 2D array texture.
+         *
+         * @see ImageLoadResult
+         */
+        static GLuint initTextureFromData(std::unordered_map<std::string, ImageLoadResult>& imageData);
+        /// A mapping of BlockType enum to a struct containing the block's texture information.
+        std::unordered_map<BlockType, blockTexture> textureMapping{};
     };
 }
 #endif //OPENGLDEMO_TEXTURES_HPP

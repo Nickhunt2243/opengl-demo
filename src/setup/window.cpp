@@ -4,10 +4,11 @@
 
 namespace Engine
 {
-    Window::Window(int width, int height, std::string name) :
-        width( width ),
-        height( height ),
-        name( std::move(name) ) {}
+    Window::Window(int width, int height, std::string name)
+        : width( width )
+        , height( height )
+        , name( std::move(name) )
+    {}
     Window::~Window()
     {
         glfwDestroyWindow(window);
@@ -52,7 +53,6 @@ namespace Engine
             return false;
         }
         glfwMakeContextCurrent(window);
-
         if (!initGLAD()) return false;
         glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
