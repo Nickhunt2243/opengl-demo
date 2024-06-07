@@ -6,10 +6,14 @@
 #include <glm/glm.hpp>
 #include <mutex>
 
+#include "../helpers/helpers.hpp"
+
 namespace Craft
 {
-    Textures::~Textures() {
-        for (const auto& keyValue: textureMapping) {
+    Textures::~Textures()
+    {
+        for (const auto& keyValue: textureMapping)
+        {
             delete keyValue.second.top;
             delete keyValue.second.bottom;
             delete keyValue.second.front;
@@ -18,43 +22,57 @@ namespace Craft
             delete keyValue.second.left;
         }
     }
-    blockTexture Textures::getTexture(std::string& name)
+    blockTexture Textures::getTexture(BlockType type) const
     {
-        return textureMapping[name];
+        auto it = textureMapping.find(type);
+        if (it != textureMapping.end())
+        {
+            return it->second;
+        }
+        else
+        {
+            return blockTexture{};
+        }
     }
     static std::mutex mutex{};
     void readImages(
             std::unordered_map<std::string, ImageLoadResult>& loadResults,
             json textureInfo,
-            std::string filepath
+            const std::string& filepath
         )
     {
         /// Iterate through texture files and get their contents.
-        Helpers::ImageData* imageData = Helpers::getImageContents(filepath);
-        if (imageData->data) {
+        ImageData* imageData = getImageContents(filepath);
+        if (imageData->data)
+        {
             /// Create a mapping of blockType -> Faces as seen in the texture_mapping.json file
             std::unordered_map<std::string, std::vector<std::string>> blockTypeToFaces{};
-            for (auto info=textureInfo.begin(); info!=textureInfo.end(); info++) {
+            for (auto info=textureInfo.begin(); info!=textureInfo.end(); info++)
+            {
                 blockTypeToFaces[info.key()] = info.value();
             }
             std::lock_guard<std::mutex> lock(mutex);
             loadResults[filepath] = {0, blockTypeToFaces, imageData};
-        } else {
+        }
+        else
+        {
             std::cerr << filepath << "Failed to load texture: " << filepath << std::endl;
         }
     }
     void constructTexture(
-            const std::string& blockType,
+            BlockType blockType,
             const std::string& blockFace,
-            GLuint texId,
-            std::unordered_map<std::string, blockTexture>& textureMapping
+            GLuint texLayer,
+            std::unordered_map<BlockType, blockTexture>& textureMapping
         )
     {
         glm::vec4 colorMapping{1.0, 1.0, 1.0, 0.0};
-        if (blockType == "grass" && blockFace == "top") {
+        if (blockType == BlockType::GRASS && blockFace == "top")
+        {
+            // Green color mapping for grass block top.
             colorMapping = glm::vec4(0.5065, 0.8296, 0.2516, 0.8);
         }
-        auto data = new textureData{texId, colorMapping};
+        auto data = new textureData{texLayer, colorMapping};
         std::lock_guard<std::mutex> lock(mutex);
         blockTexture& bt = textureMapping[blockType];
         if (blockFace == "top") bt.top = data;
@@ -64,7 +82,7 @@ namespace Craft
         else if (blockFace == "back") bt.back = data;
         else if (blockFace == "left") bt.left = data;
     }
-    bool Textures::initTextures()
+    bool Textures::initTextures(GLuint program)
     {
         std::cout << "Initializing textures." << std::endl;
         std::filesystem::path current_path = std::filesystem::current_path();
@@ -75,177 +93,112 @@ namespace Craft
         std::ifstream f(file_path);
         json textureMappingJSON = json::parse(f);
         std::vector<std::thread> threads;
-//        std::mutex mutex{};
         std::unordered_map<std::string, ImageLoadResult> loadResults{};
 
         // Iterate through
-        for (auto iter=textureMappingJSON.begin(); iter!=textureMappingJSON.end(); iter++) {
+        for (auto iter=textureMappingJSON.begin(); iter!=textureMappingJSON.end(); iter++)
+        {
             const std::string& filepath = iter.key();
             json textureInfo = textureMappingJSON[filepath];
-            threads.emplace_back([&, filepath, textureInfo]() {
-                readImages(loadResults, textureInfo, filepath);
-            });
+            threads.emplace_back([&, filepath, textureInfo]()
+                {
+                    readImages(loadResults, textureInfo, filepath);
+                }
+            );
         }
         // Start reading threads
-        for (auto& thread : threads) {
-            if (thread.joinable()) {
+        for (auto& thread : threads)
+        {
+            if (thread.joinable())
+            {
                 thread.join();
             }
         }
 
-        // Create the OpenGL textures outside of threads.
-        for (const auto& result : loadResults) {
-            GLuint tex = initTextureFromData(result.second.imageData);
-            std::cout << "Tex: " << tex << std::endl;
-            loadResults[result.first].id = tex;
-        }
+        glUseProgram(program);
+        GLuint tex = initTextureFromData(loadResults);
+        std::cout << "Initialized Textures" << std::endl;
+        glUniform1i(glGetUniformLocation(program, "textures"), 0);
         // Clearing threads.
         threads.clear();
         /// Iterate through Textures
-        for (const auto& result: loadResults) {
-            GLuint texId = result.second.id;
+        for (const auto& result: loadResults)
+        {
+            GLuint texLayer = result.second.layer;
             // Iterate through block types.
-            for (const auto& info: result.second.blockTypeToFaces) {
+            for (const auto& info: result.second.blockTypeToFaces)
+            {
                 std::string blockType = info.first;
                 // Iterate through block faces.
-                for (const auto& blockFace: info.second) {
-                    threads.emplace_back([&, texId, blockType, blockFace]() {
-                        constructTexture(blockType, blockFace, texId, textureMapping);
-                    });
+                for (const auto& blockFace: info.second)
+                {
+                    threads.emplace_back([&, texLayer, blockType, blockFace]()
+                        {
+                            constructTexture(stringToBlockType[blockType], blockFace, texLayer, textureMapping);
+                        }
+                    );
                 }
             }
-            for (auto& thread : threads) {
-                if (thread.joinable()) {
+            for (auto& thread : threads)
+            {
+                if (thread.joinable())
+                {
                     thread.join();
                 }
             }
         }
-
-
-
-
         return true;
     }
-    textureData* Textures::initTextureData(json currTexture, const std::string& blockType, const std::string& textureName) {
-        auto data = new textureData();
-        GLuint tex = initTexture(textureName, currTexture[textureName]);
-        std::cout << "Tex: " << tex << std::endl;
-        data->id = tex;
-        if (blockType == "grass" && textureName == "top") {
-            // Quick fix for now to apply colorMapping to only the grass's top face
-            data->colorMapping = glm::vec4(0.5065, 0.8296, 0.2516, 0.8);
-        } else {
-            data->colorMapping = glm::vec4(1.0, 1.0, 1.0, 0.0);
+    GLuint Textures::initTextureFromData(std::unordered_map<std::string, ImageLoadResult>& imageResults)
+    {
+        // Ensure imageResults is not empty
+        if (imageResults.empty())
+        {
+            std::cerr << "No image results to initialize textures from" << std::endl;
+            return 0;
         }
 
-        return data;
-    }
+        glActiveTexture(GL_TEXTURE0);
+        GLuint textureArray;
+        glGenTextures(1, &textureArray);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, textureArray);
 
-    GLuint Textures::initTextureFromData(Helpers::ImageData* imageData)
-    {
-        GLuint texture;
-        glGenTextures(1, &texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        auto numLayers = static_cast<GLsizei>(imageResults.size());
+        std::cout << "Number of textures: " << numLayers << std::endl;
 
-        if (imageData->data)
+        // Allocate storage for the texture array
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8, 256, 256, numLayers, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+        int layer = 0;
+        for (const auto& result : imageResults)
         {
-            GLint internalFormat;
-            GLenum format;
-            if (imageData->nrChannels == 1) {
-                internalFormat = GL_RED;
-                format = GL_RED;
-            }
-            else if (imageData->nrChannels == 3) {
-                internalFormat = GL_RGB;
-                format = GL_RGB;
-            }
-            else if (imageData->nrChannels == 4) {
-                internalFormat = GL_RGBA;
-                format = GL_RGBA;
-            } else {
-                std::cerr << "Unsupported number of channels: " << imageData->nrChannels << std::endl;
-                return false;
-            }
-            glTexImage2D(
-                    GL_TEXTURE_2D,
-                    0,
-                    internalFormat,
+            ImageData* imageData = result.second.imageData;
+            if (imageData->data)
+            {
+                glTexSubImage3D(
+                    GL_TEXTURE_2D_ARRAY,
+                    0, 0, 0,
+                    layer,
                     imageData->width,
                     imageData->height,
-                    0,
-                    format,
+                    1,
+                    GL_RGBA,
                     GL_UNSIGNED_BYTE,
                     imageData->data
-            );
-            glGenerateMipmap(GL_TEXTURE_2D);
+                );
+            }
+            else
+            {
+                std::cerr << "Failed to load texture data" << std::endl;
+                return 0;
+            }
+            imageResults[result.first].layer = layer;
+            layer++;
         }
-        else
-        {
-            std::cerr << "Failed to load texture data" << std::endl;
-            return false;
-        }
-
-        return texture;
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        return textureArray;
     }
-
-    GLuint Textures::initTexture(
-            const std::string& textureName,
-            const std::string& texturePath
-        )
-    {
-        GLuint texture;
-        glGenTextures(1, &texture);
-        std::cout << glGetError() << std::endl;
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        Helpers::ImageData* imageData = Helpers::getImageContents(texturePath);
-
-        if (imageData->data)
-        {
-            GLint internalFormat;
-            GLenum format;
-            if (imageData->nrChannels == 1) {
-                internalFormat = GL_RED;
-                format = GL_RED;
-            }
-            else if (imageData->nrChannels == 3) {
-                internalFormat = GL_RGB;
-                format = GL_RGB;
-            }
-            else if (imageData->nrChannels == 4) {
-                internalFormat = GL_RGBA;
-                format = GL_RGBA;
-            } else {
-                std::cerr << "Unsupported number of channels: " << imageData->nrChannels << std::endl;
-                return false;
-            }
-            glTexImage2D(
-                    GL_TEXTURE_2D,
-                    0,
-                    internalFormat,
-                    imageData->width,
-                    imageData->height,
-                    0,
-                    format,
-                    GL_UNSIGNED_BYTE,
-                    imageData->data
-            );
-        }
-        else
-        {
-            std::cerr << "Failed to load "<< textureName << " texture: " << texturePath << std::endl;
-            delete imageData;
-            return false;
-        }
-        delete imageData;
-        return texture;
-    }
-
 }

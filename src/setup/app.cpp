@@ -3,6 +3,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
+#include <thread>
+#include <mutex>
 
 #include "app.hpp"
 #include "../craft/textures.hpp"
@@ -12,7 +14,8 @@
 #define VERT_SHADER_PATH "src/shader/default.vert"
 #define GEOM_SHADER_PATH "src/shader/default.geom"
 #define FRAG_SHADER_PATH "src/shader/default.frag"
-
+#define CHUNK_WIDTH 3
+#define NUM_CHUNKS (CHUNK_WIDTH + CHUNK_WIDTH + 1) * (CHUNK_WIDTH + CHUNK_WIDTH + 1) /// 7 x 7
 
 namespace Engine
 {
@@ -20,12 +23,18 @@ namespace Engine
         : window(WINDOW_WIDTH, WINDOW_HEIGHT, "OpenGL")
         , program(VERT_SHADER_PATH, GEOM_SHADER_PATH, FRAG_SHADER_PATH)
         , camera{&window, &program, WINDOW_WIDTH, WINDOW_HEIGHT}
-        , world()
-    {}
-    Application::~Application()
     {
-        glDeleteVertexArrays(1, &(VAO));
-        glDeleteBuffers(1, &(VBO));
+        for (int i = 0; i<NUM_CHUNKS; i++)
+        {
+            chunks.push_back(new Craft::Chunk(&coords));
+        }
+    }
+    Application::~Application() {
+        for (int i = 0; i<NUM_CHUNKS; i++)
+        {
+            delete chunks[i];
+        }
+        delete textures;
     }
     bool Application::initialize()
     {
@@ -43,31 +52,33 @@ namespace Engine
         }
 
         program.useProgram();
-
-        // Init VAO and VBO
-        glGenVertexArrays(1, &VAO);
-        glBindVertexArray(VAO);
-        glGenBuffers(1, &VBO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glEnableVertexAttribArray(0);
         // init world
-        world.initWorld(program.getProgram());
-        world.findNeighbors();
+        textures = new Craft::Textures();
+        textures->initTextures(program.getProgram());
+        Craft::Chunk::textures = textures;
+
+        int idx = 0;
+        for (int i = -CHUNK_WIDTH; i<CHUNK_WIDTH+1; i++)
+        {
+            for (int j = -CHUNK_WIDTH; j<CHUNK_WIDTH+1; j++)
+            {
+                chunks[idx]->initChunk(i, j);
+                idx++;
+            }
+        }
+        for (int i = 0; i<NUM_CHUNKS; i++)
+        {
+            chunks[i]->findNeighbors();
+            chunks[i]->initBuffers();
+        }
+
         std::cout << "Initializing Camera." << std::endl;
         if (!camera.initCamera())
         {
             return false;
         }
 
-        glUniform1i(glGetUniformLocation(program.getProgram(), "textures[0]"), 0);
-        glUniform1i(glGetUniformLocation(program.getProgram(), "textures[1]"), 1);
-        glUniform1i(glGetUniformLocation(program.getProgram(), "textures[2]"), 2);
-        glUniform1i(glGetUniformLocation(program.getProgram(), "textures[3]"), 3);
-        glUniform1i(glGetUniformLocation(program.getProgram(), "textures[4]"), 4);
-        glUniform1i(glGetUniformLocation(program.getProgram(), "textures[5]"), 5);
-
         glPolygonMode(GL_FRONT_AND_BACK , GL_FILL);
-
         return true;
     }
     void Application::run()
@@ -79,14 +90,14 @@ namespace Engine
             if (!camera.updateCamera()) {
                 return;
             }
+
             // Update State
-            glClearColor(0.5f, 0.5f, 0.7f, 1.0f);
+            glClearColor(0.7f, 0.7f, 0.9f, 1.0f);
             // Clear the color and depth buffers
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             // Display State
-            if (!world.drawWorld()) {
-                std::cerr << "Failed to draw scene." << std::endl;
-                return;
+            for (int i=0; i<NUM_CHUNKS; i++) {
+                chunks[i]->drawChunk();
             }
             glfwSwapBuffers(window.getWindow());
             glfwPollEvents();

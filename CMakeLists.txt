@@ -25,11 +25,11 @@ message(STATUS ${SOURCES})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 # Add GLAD source files
 set(GLAD_SOURCES ${GLAD_PATH}/src/glad.c
-        src/craft/types.hpp
-        src/craft/textures.cpp
-        src/craft/textures.hpp
-        src/craft/coordinate.cpp
-        src/craft/coordinate.hpp)
+        src/craft/block.hpp
+        src/craft/block.cpp
+        src/helpers/threadPool.hpp
+        src/craft/coordinate.hpp
+        src/craft/types.cpp)
 
 add_executable(OpenGLDemo ${SOURCES} ${GLAD_SOURCES})
 
