@@ -11,11 +11,11 @@
 
 #define WINDOW_WIDTH 1500
 #define WINDOW_HEIGHT 1000
-#define VERT_SHADER_PATH "src/shader/default.vert"
-#define GEOM_SHADER_PATH "src/shader/default.geom"
-#define FRAG_SHADER_PATH "src/shader/default.frag"
-#define CHUNK_WIDTH 3
-#define NUM_CHUNKS (CHUNK_WIDTH + CHUNK_WIDTH + 1) * (CHUNK_WIDTH + CHUNK_WIDTH + 1) /// 7 x 7
+#define VERT_SHADER_PATH "src/assets/shader/default.vert"
+#define GEOM_SHADER_PATH "src/assets/shader/default.geom"
+#define FRAG_SHADER_PATH "src/assets/shader/default.frag"
+#define CHUNK_WIDTH 2
+#define NUM_CHUNKS (CHUNK_WIDTH + CHUNK_WIDTH + 1) * (CHUNK_WIDTH + CHUNK_WIDTH + 1) /// 5 x 5
 
 namespace Engine
 {
