@@ -132,12 +132,12 @@ namespace Craft
             Block* currBlock
         )
     {
-        size_t topCoordHash = currBlock->coord->add(0.0f,1.0f,0.0f);
-        size_t bottomCoordHash = currBlock->coord->add(0.0f,-1.0f,0.0f);
-        size_t frontCoordHash = currBlock->coord->add(0.0f,0.0f,1.0f);
-        size_t rightCoordHash = currBlock->coord->add(1.0f,0.0f,0.0f);
-        size_t backCoordHash = currBlock->coord->add(0.0f,0.0f,-1.0f);
-        size_t leftCoordHash = currBlock->coord->add(-1.0f,0.0f,0.0f);
+        size_t topCoordHash = currBlock->coord->add(0.0f, 1.0f, 0.0f);
+        size_t bottomCoordHash = currBlock->coord->add(0.0f, -1.0f, 0.0f);
+        size_t frontCoordHash = currBlock->coord->add(0.0f, 0.0f, 1.0f);
+        size_t rightCoordHash = currBlock->coord->add(1.0f, 0.0f, 0.0f);
+        size_t backCoordHash = currBlock->coord->add(0.0f, 0.0f, -1.0f);
+        size_t leftCoordHash = currBlock->coord->add(-1.0f, 0.0f, 0.0f);
 
         auto endIter = coords->end();
         // Top
@@ -197,10 +197,12 @@ namespace Craft
     }
     int getVerticesCount()
     {
+        // neighborsInfo.sum = number of sides to render and 4 = number of vertices per side * 6 floats per vertex
         return 6 * 4 * 10;
     }
     int getElementSize(Block* currBlock)
     {
+        // 6 elements per cube face
         return currBlock->neighborInfo.sum() * 6;
     }
 }

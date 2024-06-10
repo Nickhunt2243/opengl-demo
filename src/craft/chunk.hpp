@@ -19,8 +19,12 @@ namespace Craft
     class Chunk
     {
     public:
-        Chunk(std::unordered_set<size_t>* coords);
-        Chunk();
+        Chunk(
+            std::unordered_set<size_t>* coords,
+            ThreadPool* pool,
+            std::vector<std::future<void>>* futures,
+            std::mutex* mutex
+        );
         ~Chunk();
         /**
          * Initialize a Chunk found at the x, z coordinates.
@@ -32,11 +36,9 @@ namespace Craft
         /// A function to draw the chunk using OpenGL.
         void drawChunk() const;
         /// A helper function for initializing all neighbor information.
-        void findNeighbors();
+        void initBufferData();
         /// A static textures object.
         static Textures* textures;
-        /// A function for initializing the buffer's of the chunk.
-        void initBuffers();
     private:
         /// The Vertex Array Object of the OpenGL program.
         GLuint VAO{0},
@@ -45,19 +47,19 @@ namespace Craft
         /// The Element Buffer Object of the OpenGL program;
                EBO{0};
         /// The pool instance of the chunk.
-        ThreadPool pool{std::thread::hardware_concurrency()};
+        ThreadPool* pool;
         /// The array of futures to be ran through the thread pool.
-        std::vector<std::future<void>> futures{};
+        std::vector<std::future<void>>* futures;
         /// The set of all Coords.
         std::unordered_set<size_t>* coords;
+        std::mutex* mutex;
         /// The array of all blocks within this chunk.
-        Block** blocks = nullptr;
+//        Block** blocks = nullptr;
+        std::vector<Block*> blocks{};
         /// The vertex buffer array.
         float* vertexBufferData{};
         /// The element buffer array.
         unsigned int* elementBuffer{};
-        /// The number of blocks to draw within this chunk.
-        int numBlocks{0};
         /// The size of the VBO (numBlocks * vertices per block)
         int vboSize{0};
         /// The number of elements to draw.
@@ -72,7 +74,7 @@ namespace Craft
          * @param eIdx:       The current index of the element buffer.
          * @param currIdx:    The current index of the vertex to be drawn (the element.)
          */
-        void fillBuffers(Block* currBlock, int vIdx, int eIdx, int currIdx);
+        void fillBuffers(int idx, int startingVIdx, int startingEIdx, int currBlocksVerticesIdx);
         /**
          * A function to update neighbor info within the block.
          *
@@ -80,27 +82,7 @@ namespace Craft
          *
          * @param idx: The index of block in the blocks array.
          */
-        void updateNeighborInfo(int idx);
-        /**
-         * A helper function for initializing a layer of the chunk. Mostly used for threading.
-         *
-         * TODO: Update this function to go z and y axis rather than x and z. This will help with varying height.
-         *
-         * @param xStart:    The starting x index.
-         * @param xEnd:      The ending x index.
-         * @param zStart:    The starting z index.
-         * @param zEnd:      The ending z index.
-         * @param y:         The y index.
-         * @param idx:       The starting index of the blocks to initialize.
-         * @param blockType: The current type of the block.
-         *                      - (will have to remove when updating the function to revolve around y value)
-         */
-        void initLayer(
-                int xStart, int xEnd,
-                int zStart, int zEnd,
-                float y, int idx,
-                BlockType blockType
-        );
+        void updateNeighborInfo(int startIdx, int endIdx);
 
     };
 }

@@ -8,6 +8,32 @@
 
 #include "../craft/types.hpp"
 
+/// A struct containing information about a loaded image.
+struct ImageData {
+    /// The width of the image.
+    int width;
+    /// The height of the image.
+    int height;
+    /// The number of channels the image has.
+    int nrChannels;
+    /// The data of the image.
+    unsigned char *data;
+
+    ~ImageData() {
+        stbi_image_free(data);
+    }
+};
+/**
+ * A struct to hold information on an images texture
+ */
+struct ImageLoadResult {
+    /// The layer of the texture in the Sampler2DArray.
+    GLuint layer;
+    /// A mapping of block type to the faces the texture should be used with.
+    std::unordered_map<std::string, std::vector<std::string>> blockTypeToFaces;
+    /// A struct containing the ImageData.
+    ImageData *imageData;
+};
 /**
  * Retrieve the contents of a file given its path.
  *

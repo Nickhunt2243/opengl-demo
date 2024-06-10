@@ -39,6 +39,13 @@ namespace Craft
             size_t hz = std::hash<float>()(z+dZ);
             return hx ^ (hy << 1) ^ (hz << 2); // Combine the hashes
         }
+
+        inline static size_t compute_hash(float x, float z, float y) {
+            size_t hx = std::hash<float>()(x);
+            size_t hy = std::hash<float>()(y);
+            size_t hz = std::hash<float>()(z);
+            return hx ^ (hy << 1) ^ (hz << 2); // Combine the hashes
+        }
     };
 }
 

@@ -13,11 +13,17 @@ namespace Engine
     float Camera::yaw = -90.0f;
     float Camera::pitch = 0.0f;
 
-    Camera::Camera(Window* window, Program* program, unsigned int width, unsigned int height)
-            : window(window)
-            , program(program)
-            , windowWidth(width)
-            , windowHeight(height)
+    Camera::Camera(
+            Window* window,
+            Program* program,
+            unsigned int width,
+            unsigned int height,
+            float x, float y, float z
+    )
+        : window(window)
+        , program(program)
+        , windowWidth(width)
+        , windowHeight(height)
     {}
 
     bool Camera::initCamera()
@@ -42,32 +48,8 @@ namespace Engine
         return true;
     }
 
-    bool Camera::updateCamera()
+    bool Camera::updateCamera(glm::vec3 cameraPos, glm::vec3 cameraUp)
     {
-        if (glfwGetKey(window->getWindow(), GLFW_KEY_W) == GLFW_PRESS)
-        {
-            cameraPos += cameraWalkingSpeed * cameraFront;
-        }
-        if (glfwGetKey(window->getWindow(), GLFW_KEY_S) == GLFW_PRESS)
-        {
-            cameraPos -= cameraWalkingSpeed * cameraFront;
-        }
-        if (glfwGetKey(window->getWindow(), GLFW_KEY_A) == GLFW_PRESS)
-        {
-            cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraWalkingSpeed;
-        }
-        if (glfwGetKey(window->getWindow(), GLFW_KEY_D) == GLFW_PRESS)
-        {
-            cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraWalkingSpeed;
-        }
-        if (glfwGetKey(window->getWindow(), GLFW_KEY_SPACE) == GLFW_PRESS)
-        {
-            cameraPos += glm::vec3(0.0f, 1.0f, 0.0f) * cameraWalkingSpeed;
-        }
-        if (glfwGetKey(window->getWindow(), GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-        {
-            cameraPos += glm::vec3(0.0f, -1.0f, 0.0f) * cameraWalkingSpeed;
-        }
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         if (!setMat4(program->getProgram(), "u_viewT", view)) {
             return false;
@@ -111,4 +93,13 @@ namespace Engine
         direction.z = sin(glm::radians(Camera::yaw)) * cos(glm::radians(Camera::pitch));
         camera->cameraFront = glm::normalize(direction);
     }
+
+    glm::vec3 Camera::getCameraFront()
+    {
+        return cameraFront;
+    }
+//    glm::vec3 Camera::getCameraUp()
+//    {
+//        return cameraUp;
+//    }
 }

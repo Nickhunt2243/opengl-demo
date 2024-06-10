@@ -21,6 +21,8 @@ namespace Craft
      */
     struct Block
     {
+        /// The id of the current block in the buffer
+        unsigned int id;
         /// The Coordinate struct of the blocks position.
         Coordinate* coord{nullptr};
         /// The enum of the block's type.
@@ -37,6 +39,13 @@ namespace Craft
         friend std::ostream& operator<<(std::ostream &os, const Block &block)
         {
             os << "Block( " << block.type << ", Coordinate(" << block.coord->x << ", " << block.coord->y << ", " << block.coord->z << ") )";
+            return os;
+        }
+
+        /// << Operator for troubleshooting.
+        friend std::ostream& operator<<(std::ostream &os, const Block* block)
+        {
+            os << "Block( " << block->type << ", Coordinate(" << block->coord->x << ", " << block->coord->y << ", " << block->coord->z << ") )";
             return os;
         }
     };

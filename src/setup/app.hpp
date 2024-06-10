@@ -4,8 +4,11 @@
 #include "window.hpp"
 #include "program.hpp"
 #include "camera.hpp"
+#include "../craft/player.hpp"
 #include "../craft/chunk.hpp"
 #include "../craft/textures.hpp"
+#include "../craft/world.hpp"
+
 namespace Engine
 {
     class Application
@@ -30,14 +33,8 @@ namespace Engine
         Window window;
         /// The Program object of the application
         Program program;
-        /// The camera object of the application.
-        Camera camera;
-        /// The cube shape to be rendered.
-        std::vector<Craft::Chunk*> chunks;
-        /// The pointer to the textures object, holding all information on the generated textures.
-        Craft::Textures* textures{nullptr};
-        /// The unordered set of hashed coordinates.
-        std::unordered_set<size_t> coords{};
+        /// The player world.
+        Craft::World* world;
     };
 }
 
