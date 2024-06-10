@@ -7,34 +7,30 @@
 #include <unordered_set>
 #include <sstream>
 #include <mutex>
+#include <random>
 
 #include "chunk.hpp"
-#include "../helpers/helpers.hpp"
-#define CHUNK_SIZE 16
-#define CHUNK_HEIGHT 128
-
+#define CHUNK_WIDTH 16
+#define CHUNK_HEIGHT 16
+#define Y_STEP_VALUE 8
 namespace Craft
 {
     Textures* Chunk::textures = nullptr;
 
-    Chunk::Chunk(std::unordered_set<size_t>* coords)
+    Chunk::Chunk(
+            std::unordered_set<size_t>* coords,
+            ThreadPool* pool,
+            std::vector<std::future<void>>* futures,
+            std::mutex* mutex
+    )
         : coords{coords}
-    {};
-    Chunk::Chunk()
-            : coords{}
+        , pool{pool}
+        , futures{futures}
+        , mutex{mutex}
     {};
     Chunk::~Chunk()
     {
         delete[] vertexBufferData;
-        if (blocks != nullptr)
-        {
-            for (int i = 0; i < numBlocks; ++i)
-            {
-                delete blocks[i];
-            }
-            delete[] blocks;
-        }
-
         if (VAO != 0)
         {
             glDeleteVertexArrays(1, &(VAO));
@@ -42,149 +38,108 @@ namespace Craft
             glDeleteBuffers(1, &(EBO));
         }
     }
-    static std::mutex mutex{};
-    void Chunk::initLayer(
-            int xStart, int xEnd,
-            int zStart, int zEnd,
-            float y, int idx,
-            BlockType blockType
-        )
-    {
-        for (int x=xStart; x<xEnd; x++)
-        {
-            for (int z=zStart; z<zEnd; z++)
-            {
-                auto coord = new Coordinate((float) x, y, (float) z);
-                auto newBlock = new Block;
-                blockTexture texture = textures->getTexture(blockType);
-                newBlock->coord = coord;
-                newBlock->type = blockType;
-                newBlock->textures = texture;
 
-                std::lock_guard<std::mutex> lock(mutex);
-                if (idx >= 0 && idx < numBlocks)
+    void Chunk::initChunk(int x, int z) {
+
+        int xStart = x * CHUNK_WIDTH - (CHUNK_WIDTH / 2),
+            xEnd = x * CHUNK_WIDTH + (CHUNK_WIDTH / 2),
+            zStart = z * CHUNK_WIDTH - (CHUNK_WIDTH / 2),
+            zEnd = z * CHUNK_WIDTH + (CHUNK_WIDTH / 2);
+
+        BlockType blockType = BlockType::STONE;
+//        std::random_device rd; // Seed the random number generator with a non-deterministic value
+//        std::mt19937 gen(rd()); // Mersenne Twister generator
+//        // Create a distribution for integers in the range [min, max]
+//        std::uniform_int_distribution<> dis(0, 6);
+//        // Generate a random number
+//        int random_number;
+
+        for (int xCoord=xStart; xCoord<xEnd; xCoord++ )
+        {
+            for (int zCoord=zStart; zCoord<zEnd;zCoord++)
+            {
+//                random_number = dis(gen);
+                for (int yCoord=0; yCoord>-CHUNK_HEIGHT; yCoord--)
                 {
-                    blocks[idx] = newBlock;
-                    size_t hashedCoord = std::hash<Coordinate*>()(coord);
-                    coords->insert(hashedCoord);
+                    auto coord = new Coordinate((float) xCoord, (float) yCoord, (float) zCoord);
+                    auto newBlock = new Block();
+                    blockTexture texture = textures->getTexture(blockType);
+                    newBlock->coord = coord;
+                    newBlock->type = blockType;
+                    newBlock->textures = texture;
+                    blocks.push_back(newBlock);
+                    size_t hashedCoord = coord->add(0.0f, 0.0f, 0.0f);
+                    {
+                        std::lock_guard<std::mutex> lock(*mutex);
+                        coords->insert(hashedCoord);
+                    }
                 }
-                else
-                {
-                    std::cerr << "Index out of bounds: " << idx << std::endl;
-                    delete newBlock; // Avoid memory leak
-                }
-                idx += 1;
             }
         }
     }
-
-    void Chunk::initChunk(int x, int z)
+    void Chunk::updateNeighborInfo(int startIdx, int endIdx)
     {
-        BlockType blockType = BlockType::GRASS;
-
-        int xStart = x * CHUNK_SIZE - (CHUNK_SIZE / 2),
-            xEnd = x * CHUNK_SIZE + (CHUNK_SIZE / 2),
-            zStart = z * CHUNK_SIZE - (CHUNK_SIZE / 2),
-            zEnd = z * CHUNK_SIZE + (CHUNK_SIZE / 2),
-            yEnd = -CHUNK_HEIGHT;
-        numBlocks = CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT;
-        blocks = new Block*[numBlocks];
-        int idx = 0;
-        for (int i = 0; i < numBlocks; ++i) {
-            blocks[i] = nullptr;
-        }
-        futures.clear();
-        for (int y=0;y>yEnd;y--)
+        for (int i=startIdx; i<endIdx; i++)
         {
-            futures.emplace_back(
-                pool.enqueue(
-                    &Chunk::initLayer,
-                    this,
-                    xStart, xEnd,
-                    zStart, zEnd,
-                    (float)y, idx,
-                    blockType
-                )
-            );
-            idx += CHUNK_SIZE * CHUNK_SIZE;
-            if (y < -1)
-            {
-                blockType = BlockType::STONE;
-            }
-            else if (y < 1)
-            {
-                blockType = BlockType::DIRT;
-            }
-        }
-        for (auto& future : futures)
-        {
-            future.get(); // Wait for all tasks to complete
+            updateNeighbors(coords, blocks[i]);
         }
     }
-    void Chunk::fillBuffers(
-            Block* currBlock, int vIdx, int eIdx, int currIdx
-        )
+    void Chunk::initBufferData()
     {
-        fillVerticesBufferData(currBlock, vertexBufferData, vIdx);
-        fillElementBufferData(currBlock, elementBuffer, eIdx, currIdx);
-    }
-    void Chunk::updateNeighborInfo(int idx)
-    {
-        int maxIdx = idx + (CHUNK_SIZE * CHUNK_SIZE);
-        for (int i=idx; i<maxIdx; i++)
-        {
-            Block* currBlock = blocks[i];
-            updateNeighbors(coords, currBlock);
-            {
-                std::lock_guard<std::mutex> lock(mutex);
-                elementCount += getElementSize(currBlock);
-            }
-        }
-    }
-    void Chunk::findNeighbors()
-    {
-        vboSize = numBlocks * getVerticesCount();
+        vboSize = (int) blocks.size() * getVerticesCount();
         elementCount = 0;
-        futures.clear();
-        for ( int i=0; i<numBlocks; i+=(CHUNK_SIZE * CHUNK_SIZE) )
+        int startIdx = 0, endIdx = 0;
+        for ( int i=0; i<Y_STEP_VALUE;i++)
         {
-            futures.emplace_back(
-                pool.enqueue(&Chunk::updateNeighborInfo, this, i)
-            );
+            endIdx = (i+1) * ( (int) blocks.size() / Y_STEP_VALUE );
+            updateNeighborInfo(startIdx, endIdx);
+            startIdx = endIdx;
         }
-        for (auto& future : futures)
+        for (auto & block : blocks)
         {
-            future.get();
+            elementCount += getElementSize(block);
         }
-
-    }
-    void Chunk::initBuffers()
-    {
-        futures.clear();
         Block* currBlock;
         vertexBufferData = new float[vboSize];
         elementBuffer = new unsigned int[elementCount];
         int vIdx = 0,
             eIdx = 0,
-            currIdx = 0;
-
-        for ( int i=0; i<numBlocks; i++ )
+            currBlocksVerticesIdx = 0;
+        int count = 0;
+        for ( int i=0; i<blocks.size(); i++ )
         {
             currBlock = blocks[i];
-            futures.emplace_back(
-                pool.enqueue(&Chunk::fillBuffers, this, currBlock, vIdx, eIdx, currIdx)
-            );
-            currIdx += 6 * 4;
+            currBlocksVerticesIdx += 6 * 4;
             eIdx += getElementSize(currBlock);
             vIdx += getVerticesCount();
-        }
-        for (auto& future : futures)
-        {
-            future.get(); // Wait for all tasks to complete
+            count++;
+            if (count == blocks.size() / Y_STEP_VALUE)
+            {
+                fillBuffers(i, vIdx, eIdx, currBlocksVerticesIdx);
+                count = 0;
+            }
         }
         initVAO();
     }
+    void Chunk::fillBuffers(
+            int endIdx, int startingVIdx, int startingEIdx, int currBlocksVerticesIdx
+        )
+    {
+        int startIdx = endIdx - ((int) blocks.size() / Y_STEP_VALUE) + 1;
+        int vIdx = startingVIdx;
+        int eIdx = startingEIdx;
+        Block* currBlock;
 
+        for (int i=endIdx; i>=startIdx; i--)
+        {
+            currBlock = blocks[i];
+            currBlocksVerticesIdx -= 6 * 4;
+            eIdx -= getElementSize(currBlock);
+            vIdx -= getVerticesCount();
+            fillVerticesBufferData(currBlock, vertexBufferData, vIdx);
+            fillElementBufferData(currBlock, elementBuffer, eIdx, currBlocksVerticesIdx);
+        }
+    }
     void Chunk::initVAO()
     {
         // Init VAO and VBO
@@ -221,8 +176,11 @@ namespace Craft
     }
     void Chunk::drawChunk() const
     {
-        glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, (GLint) elementCount, GL_UNSIGNED_INT, nullptr);
-        glBindVertexArray(0);
+        if (VAO)
+        {
+            glBindVertexArray(VAO);
+            glDrawElements(GL_TRIANGLES, (GLint) elementCount, GL_UNSIGNED_INT, nullptr);
+            glBindVertexArray(0);
+        }
     }
 }

@@ -19,7 +19,13 @@ namespace Engine
          * @param window:  A pointer to the Window object.
          * @param program: A pointer to the Program object.
          */
-        Camera(Window* window, Program* program, unsigned int width, unsigned int height);
+        Camera(
+            Window* window,
+            Program* program,
+            unsigned int width,
+            unsigned int height,
+            float x, float y, float z
+        );
         ~Camera() = default;
         /**
          * Initialize the camera object's fields.
@@ -38,7 +44,7 @@ namespace Engine
          *
          *  @return True if camera updated else false
          */
-        bool updateCamera();
+        bool updateCamera(glm::vec3 cameraPos, glm::vec3 cameraUp);
         /**
          * Callback for handling mouse movement for looking around.
          *
@@ -47,26 +53,22 @@ namespace Engine
          * @param yPos:   The current Y position of the mouse.
          */
         static void mouse_movement_callback(GLFWwindow* window, double xPos, double yPos);
+
+        glm::vec3 getCameraFront();
     private:
         /// A pointer to a window object.
         Window* window;
         /// A pointer to a program object.
         Program* program;
-        /// The walking speed of the camera.
-        float cameraWalkingSpeed{0.1f};
         /// The sensitivity of the camera.
         float sensitivity{0.075f};
         /// The height and width of the current window.
         unsigned int windowWidth,
                      windowHeight;
-        /// The 3x1 vector describing the cameras current position.
-        glm::vec3 cameraPos{glm::vec3(0.0f, 2.0f,  3.0f)};
         /// The 3x1 vector describing the cameras front direction.
         glm::vec3 cameraFront{glm::vec3(0.0f, 0.0f, -1.0f)};
-        /// The 3x1 vector describing the View matrices up direction.
-        glm::vec3 cameraUp{glm::vec3(0.0f, 1.0f,  0.0f)};
         /// The 4x4 matrix describing the View transformation.
-        glm::mat4 view{glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp)};
+        glm::mat4 view{};//{glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp)};
         /// A Boolean that acts as a buffer for initial calls to mouse_movement_callback.
         static bool firstMouse;
         /// The previous X value of the mouse.
@@ -77,6 +79,7 @@ namespace Engine
         static float yaw;
         /// The current angle in degrees of the camera for looking up and down.
         static float pitch;
+
     };
 }
 
