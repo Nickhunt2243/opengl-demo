@@ -10,6 +10,7 @@
 #include <string>
 #include <ostream>
 #include <unordered_set>
+#include <mutex>
 
 #include "coordinate.hpp"
 #include "types.hpp"
@@ -21,14 +22,12 @@ namespace Craft
      */
     struct Block
     {
-        /// The id of the current block in the buffer
-        unsigned int id;
         /// The Coordinate struct of the blocks position.
         Coordinate* coord{nullptr};
-        /// The enum of the block's type.
-        BlockType type{};
         /// The information of the blocks neighbors.
         NeighborsInfo neighborInfo{};
+        /// The enum of the block's type.
+        BlockType type{};
         /// The information for the blocks textures and color mapping.
         blockTexture textures{};
         ~Block()
@@ -58,6 +57,7 @@ namespace Craft
      */
     void updateNeighbors(
         std::unordered_set<size_t>* coords,
+        std::mutex* coordsMutex,
         Block* currBlock
     );
     /**

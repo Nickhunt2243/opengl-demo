@@ -8,6 +8,7 @@
 #include <iostream>
 #include <unordered_set>
 #include <cmath>
+#include <mutex>
 
 #include "../setup/camera.hpp"
 #include "../setup/window.hpp"
@@ -24,7 +25,8 @@ namespace Craft
             Engine::Program* program,
             unsigned int width,
             unsigned int height,
-            std::unordered_set<size_t>* coords
+            std::unordered_set<size_t>* coords,
+            std::mutex* coordsMutex
         );
         /**
          * A function that initializes the players camera.
@@ -49,18 +51,24 @@ namespace Craft
         float cameraWalkingSpeed{0.1f};
         /// The height of the player.
         float playerHeight{2.0f};
+        /// The width of player from side to side.
+        float playerWidthLR{0.35f};
+        /// The width of the player from front to back.
+        float playerWidthFB{0.6f};
         /// The falling speed of the player.
         float fallingSpeed{0.1f};
         /// The vec3 describing the View matrices up direction.
         glm::vec3 cameraUp{glm::vec3(0.0f, 1.0f,  0.0f)};
         /// Boolean for whether the player is falling or not.
-        bool isFalling{true};
+        bool isFalling{false};
         /// A pointer to the GLFW window.
         Engine::Window* window;
         /// A pointer to a set of 3D coordinates.
         std::unordered_set<size_t>* coords;
         /// The camera of the scene.
         Engine::Camera camera;
+        /// Mutex for the coords set.
+        std::mutex* coordsMutex;
         /**
          * A function for telling if the players coordinates are on top of a block.
          *
@@ -71,6 +79,13 @@ namespace Craft
          * @return True if the player is on a block.
          */
         bool blockBelowPlayer();
+
+        /// TODO: Implement left, right, back, and forward collision. Will implement after Vertex Buffer refactor.
+//        bool blockInFrontPlayer();
+//        bool blockBehindPlayer();
+//        bool blockLeftOfPlayer();
+//        bool blockRightOfPlayer();
+
     };
 }
 

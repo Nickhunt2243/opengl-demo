@@ -47,6 +47,40 @@ namespace Craft
             return hx ^ (hy << 1) ^ (hz << 2); // Combine the hashes
         }
     };
+    /// A struct containing coordinate information for a given x and z position.
+    struct Coordinate2D
+    {
+        Coordinate2D(
+                float x, float z
+        ) : x{x}, z{z}
+        {}
+        /// The x position of the object.
+        float x;
+        /// The z position of the object.
+        float z;
+
+        /**
+         * A helper function for finding the hashed value of a coordinate with the offset of dX, dZ.
+         *
+         * Used for finding neighbors efficiently.
+         *
+         * @param dX: The X offset.
+         * @param dZ: The Z offset.
+         * @return
+         */
+        [[nodiscard]] size_t add(float dX, float dZ) const
+        {
+            size_t hx = std::hash<float>()(x+dX);
+            size_t hz = std::hash<float>()(z+dZ);
+            return hx ^ (hz << 1); // Combine the hashes
+        }
+
+        inline static size_t compute_hash(float x, float z) {
+            size_t hx = std::hash<float>()(x);
+            size_t hz = std::hash<float>()(z);
+            return hx ^ (hz << 1); // Combine the hashes
+        }
+    };
 }
 
 
@@ -79,6 +113,33 @@ namespace std
             return lhs->x == rhs->x &&
                    lhs->y == rhs->y &&
                    lhs->z == rhs->z;
+        }
+    };
+
+    /**
+     * A function for determining the hash of a Coordinate2D pointer.
+     */
+    template<>
+    struct hash<Craft::Coordinate2D>
+    {
+        size_t operator()(const Craft::Coordinate2D coord) const
+        {
+            size_t hx = hash<float>()(coord.x);
+            size_t hz = hash<float>()(coord.z);
+            return hx ^ (hz << 2); // Combine the hashes
+        }
+    };
+    /**
+     * A function for determining equality of coordinate2D pointers.
+     */
+    template<>
+    struct equal_to<Craft::Coordinate2D>
+    {
+        bool operator()(const Craft::Coordinate2D lhs, const Craft::Coordinate2D rhs) const
+        {
+//            if (lhs == nullptr || rhs == nullptr) return lhs == rhs;
+            return lhs.x == rhs.x &&
+                   lhs.z == rhs.z;
         }
     };
 }

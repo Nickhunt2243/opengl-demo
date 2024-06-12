@@ -23,7 +23,7 @@ namespace Craft
             std::unordered_set<size_t>* coords,
             ThreadPool* pool,
             std::vector<std::future<void>>* futures,
-            std::mutex* mutex
+            std::mutex* coordsMutex
         );
         ~Chunk();
         /**
@@ -34,11 +34,13 @@ namespace Craft
          */
         void initChunk(int x, int z);
         /// A function to draw the chunk using OpenGL.
-        void drawChunk() const;
+        void drawChunk();
         /// A helper function for initializing all neighbor information.
         void initBufferData();
         /// A static textures object.
         static Textures* textures;
+        /// Initialize the Element Buffer array.
+        void initElementBuffer();
     private:
         /// The Vertex Array Object of the OpenGL program.
         GLuint VAO{0},
@@ -52,29 +54,22 @@ namespace Craft
         std::vector<std::future<void>>* futures;
         /// The set of all Coords.
         std::unordered_set<size_t>* coords;
-        std::mutex* mutex;
+        /// A Boolean of whether we are ready to initialize the VAO
+        bool isReadyToInitVAO{false};
+        /// A Boolean to know if we are ready to start drawing.
+        bool canDrawChunk{false};
+        /// A mutex for accessing the coords set.
+        std::mutex* coordsMutex;
         /// The array of all blocks within this chunk.
-//        Block** blocks = nullptr;
         std::vector<Block*> blocks{};
         /// The vertex buffer array.
-        float* vertexBufferData{};
+        float* vertexBufferData{nullptr};
         /// The element buffer array.
-        unsigned int* elementBuffer{};
+        unsigned int* elementBuffer{nullptr};
         /// The size of the VBO (numBlocks * vertices per block)
         int vboSize{0};
         /// The number of elements to draw.
         int elementCount{0};
-        /// Initialize the Vertex Array Object.
-        void initVAO();
-        /**
-         * A function to fill all of the buffers being used to render a chunk.
-         *
-         * @param currBlock:  The current block to be initialized.
-         * @param vIdx:       The current index of the vertex buffer.
-         * @param eIdx:       The current index of the element buffer.
-         * @param currIdx:    The current index of the vertex to be drawn (the element.)
-         */
-        void fillBuffers(int idx, int startingVIdx, int startingEIdx, int currBlocksVerticesIdx);
         /**
          * A function to update neighbor info within the block.
          *
@@ -83,7 +78,27 @@ namespace Craft
          * @param idx: The index of block in the blocks array.
          */
         void updateNeighborInfo(int startIdx, int endIdx);
-
+        /// Initialize the Vertex Array Object.
+        void initVAO();
+        /**
+         * Fill the element buffer with the elements to be drawn.
+         *
+         * @param endIdx:                The ending idx of blocks.
+         * @param startingEIdx:          The starting index of the element buffer.
+         * @param currBlocksVerticesIdx: The current number of the vertex buffer to draw.
+         */
+        void fillElementBuffer(
+                int endIdx, int startingEIdx, int currBlocksVerticesIdx
+        );
+        /**
+         * Fill the vertex buffer with the vertex information.
+         *
+         * @param endIdx:       The ending index of blocks.
+         * @param startingVIdx: The starting index of the vertex buffer.
+         */
+        void fillVertexBuffer(
+                int endIdx, int startingVIdx
+        );
     };
 }
 
