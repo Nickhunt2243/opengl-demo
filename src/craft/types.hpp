@@ -15,12 +15,12 @@
 
 namespace Craft
 {
+    /// A struct for holding texture data.
     struct textureData {
         /// The layer of the texture in the sampler2DArray
         GLuint layer;
         /// The color mapping of the texture.
         glm::vec4 colorMapping;
-
         ~textureData() {
             glDeleteTextures(1, &layer);
         }
@@ -50,6 +50,15 @@ namespace Craft
         uint8_t right: 1;
         uint8_t back: 1;
         uint8_t left: 1;
+
+        NeighborsInfo()
+            : top{0}
+            , bottom{0}
+            , front{0}
+            , right{0}
+            , back{0}
+            , left{0}
+        {}
 
         /**
          * A function that determines the number of sides without neighbors (how many sides to draw).

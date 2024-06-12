@@ -15,7 +15,7 @@
 namespace Engine
 {
     Application::Application()
-        : window(WINDOW_WIDTH, WINDOW_HEIGHT, "OpenGL")
+        : window(WINDOW_WIDTH, WINDOW_HEIGHT, "ChunkCraft")
         , program(VERT_SHADER_PATH, GEOM_SHADER_PATH, FRAG_SHADER_PATH)
         , world{new Craft::World(&window, &program, WINDOW_WIDTH, WINDOW_HEIGHT)}
     {

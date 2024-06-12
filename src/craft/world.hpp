@@ -51,7 +51,9 @@ namespace Craft
         /// The camera object of the application.
         Player player;
         /// The cube shape to be rendered.
-        std::vector<Chunk*> chunks;
+        Coordinate2D playerOriginCoord;
+        /// The mapping of 2D coordinates to Chunk*
+        std::unordered_map<Coordinate2D, Chunk*> chunks{};
         /// The pointer to the textures object, holding all information on the generated textures.
         Textures* textures{nullptr};
         /// The pool instance of the chunk.
@@ -59,7 +61,26 @@ namespace Craft
         /// The array of futures to be ran through the thread pool.
         std::vector<std::future<void>> futures{};
         /// The mutex for the multi-threading.
-        std::mutex mutex{};
+        std::mutex chunkMutex{};
+        /// A mutex for access the coords set.
+        std::mutex coordsMutex{};
+        /// The X coordinate of the first chunk to render (inclusive).
+        int chunkStartX;
+        /// The Z coordinate of the first chunk to render (inclusive).
+        int chunkStartZ;
+        /// The X coordinate of the last chunk to render (exclusive).
+        int chunkEndX;
+        /// The Z coordinate of the last chunk to render (exclusive).
+        int chunkEndZ;
+        /**
+         * A helper function for initializing a chunk.
+         *
+         * @param x: The x coordinate of the chunks center.
+         * @param z: The z coordinate of the chunks center.
+         */
+        void initChunk(int x, int z);
+        /// Calculate the new bounds of the chunks to render.
+        void calcChunkBounds();
     };
 }
 

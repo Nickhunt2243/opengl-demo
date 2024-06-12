@@ -129,70 +129,56 @@ namespace Craft
     }
     void updateNeighbors(
             std::unordered_set<size_t>* coords,
+            std::mutex* coordsMutex,
             Block* currBlock
         )
     {
-        size_t topCoordHash = currBlock->coord->add(0.0f, 1.0f, 0.0f);
-        size_t bottomCoordHash = currBlock->coord->add(0.0f, -1.0f, 0.0f);
-        size_t frontCoordHash = currBlock->coord->add(0.0f, 0.0f, 1.0f);
-        size_t rightCoordHash = currBlock->coord->add(1.0f, 0.0f, 0.0f);
-        size_t backCoordHash = currBlock->coord->add(0.0f, 0.0f, -1.0f);
-        size_t leftCoordHash = currBlock->coord->add(-1.0f, 0.0f, 0.0f);
 
-        auto endIter = coords->end();
+        bool drawTop = false;
+        bool drawBottom = false;
+        bool drawFront = false;
+        bool drawRight = false;
+        bool drawBack = false;
+        bool drawLeft = false;
+        {
+            std::lock_guard<std::mutex> lock(*coordsMutex);
+            auto endIter = coords->end();
+            drawTop = coords->find(currBlock->coord->add(0.0f, 1.0f, 0.0f)) == endIter;
+            drawBottom = coords->find(currBlock->coord->add(0.0f, -1.0f, 0.0f)) == endIter;
+            drawFront = coords->find(currBlock->coord->add(0.0f, 0.0f, 1.0f)) == endIter;
+            drawRight = coords->find(currBlock->coord->add(1.0f, 0.0f, 0.0f)) == endIter;
+            drawBack = coords->find(currBlock->coord->add(0.0f, 0.0f, -1.0f)) == endIter;
+            drawLeft = coords->find(currBlock->coord->add(-1.0f, 0.0f, 0.0f)) == endIter;
+        }
         // Top
-        if (coords->find(topCoordHash) == endIter)
+        if (drawTop)
         {
             currBlock->neighborInfo.top = 1;
         }
-        else
-        {
-            currBlock->neighborInfo.top = 0;
-        }
         // bottom
-        if (coords->find(bottomCoordHash) == endIter)
+        if (drawBottom)
         {
             currBlock->neighborInfo.bottom = 1;
         }
-        else
-        {
-            currBlock->neighborInfo.bottom = 0;
-        }
         // front
-        if (coords->find(frontCoordHash) == endIter)
+        if (drawFront)
         {
             currBlock->neighborInfo.front = 1;
         }
-        else
-        {
-            currBlock->neighborInfo.front = 0;
-        }
         // right
-        if (coords->find(rightCoordHash) == endIter)
+        if (drawRight)
         {
             currBlock->neighborInfo.right = 1;
         }
-        else
-        {
-            currBlock->neighborInfo.right = 0;
-        }
         // back
-        if (coords->find(backCoordHash) == endIter)
+        if (drawBack)
         {
             currBlock->neighborInfo.back = 1;
         }
-        else
-        {
-            currBlock->neighborInfo.back = 0;
-        }
         // left
-        if (coords->find(leftCoordHash) == endIter)
+        if (drawLeft)
         {
             currBlock->neighborInfo.left = 1;
-        }
-        else
-        {
-            currBlock->neighborInfo.left = 0;
         }
     }
     int getVerticesCount()

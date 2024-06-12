@@ -35,7 +35,7 @@ namespace Engine
         }
 
         // Initialize the Proj and Model matrices. These do not change.
-        glm::mat4 projMatrix = glm::perspective(glm::radians(45.0f), (float) windowWidth / (float) windowHeight, 0.1f, 100.0f);
+        glm::mat4 projMatrix = glm::perspective(glm::radians(45.0f), (float) windowWidth / (float) windowHeight, 0.1f, 500.0f);
         setMat4(program->getProgram(), "u_projT", projMatrix);
         setMat4(program->getProgram(), "u_viewT", view);
         int width, height;
