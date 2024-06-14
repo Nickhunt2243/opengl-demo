@@ -5,10 +5,18 @@
 #ifndef OPENGLDEMO_PLAYER_HPP
 #define OPENGLDEMO_PLAYER_HPP
 
+#ifndef CHUNK_WIDTH
+#define CHUNK_WIDTH 16
+#endif
+#ifndef CHUNK_HEIGHT
+#define CHUNK_HEIGHT 128
+#endif
+
 #include <iostream>
 #include <unordered_set>
 #include <cmath>
 #include <mutex>
+#include <bitset>
 
 #include "../setup/camera.hpp"
 #include "../setup/window.hpp"
@@ -25,7 +33,7 @@ namespace Craft
             Engine::Program* program,
             unsigned int width,
             unsigned int height,
-            std::unordered_set<size_t>* coords,
+            std::unordered_map<Coordinate2D, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords,
             std::mutex* coordsMutex
         );
         /**
@@ -59,12 +67,14 @@ namespace Craft
         float fallingSpeed{0.1f};
         /// The vec3 describing the View matrices up direction.
         glm::vec3 cameraUp{glm::vec3(0.0f, 1.0f,  0.0f)};
+        /// A mapping of chunk coords to a block placement bitmap for collision.
+        std::unordered_map<Coordinate2D, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords;
         /// Boolean for whether the player is falling or not.
-        bool isFalling{false};
+        bool isFalling{true};
         /// A pointer to the GLFW window.
         Engine::Window* window;
         /// A pointer to a set of 3D coordinates.
-        std::unordered_set<size_t>* coords;
+//        std::unordered_set<size_t>* coords;
         /// The camera of the scene.
         Engine::Camera camera;
         /// Mutex for the coords set.
@@ -81,11 +91,10 @@ namespace Craft
         bool blockBelowPlayer();
 
         /// TODO: Implement left, right, back, and forward collision. Will implement after Vertex Buffer refactor.
-//        bool blockInFrontPlayer();
-//        bool blockBehindPlayer();
-//        bool blockLeftOfPlayer();
-//        bool blockRightOfPlayer();
-
+        //  bool blockInFrontPlayer();
+        //  bool blockBehindPlayer();
+        //  bool blockLeftOfPlayer();
+        //  bool blockRightOfPlayer();
     };
 }
 

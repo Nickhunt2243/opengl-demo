@@ -1,13 +1,12 @@
 #version 460 core
 in vec2 texCoords;
 in vec4 colorMap;
-in flat float currTex;
+in flat int currTex;
 
 uniform sampler2DArray textures;
 uniform sampler2DArray colorMaps;
 
 out vec4 FragColor;
-vec4 hello;
 
 void main()
 {

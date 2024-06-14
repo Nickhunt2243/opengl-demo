@@ -46,8 +46,6 @@ namespace Craft
     private:
         /// A pointer to the OpenGL program.
         Engine::Program* program;
-        /// The unordered set of hashed coordinates.
-        std::unordered_set<size_t> coords{};
         /// The camera object of the application.
         Player player;
         /// The cube shape to be rendered.
@@ -72,6 +70,10 @@ namespace Craft
         int chunkEndX;
         /// The Z coordinate of the last chunk to render (exclusive).
         int chunkEndZ;
+        /// A mapping of chunk coords to a block position bitmap.
+        std::unordered_map<Coordinate2D, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*> coords{};
+        /// The mutex for only allowing us to create one set of chunks at a time.
+        std::mutex initOneSideChunksMutex{};
         /**
          * A helper function for initializing a chunk.
          *
@@ -80,7 +82,7 @@ namespace Craft
          */
         void initChunk(int x, int z);
         /// Calculate the new bounds of the chunks to render.
-        void calcChunkBounds();
+        Coordinate2D calcChunkBounds();
     };
 }
 

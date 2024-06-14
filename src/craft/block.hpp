@@ -6,11 +6,18 @@
 #define OPENGLDEMO_BLOCK_HPP
 
 #define CUBE_DELTA 0.5f
+#ifndef CHUNK_WIDTH
+#define CHUNK_WIDTH 16
+#endif
+#ifndef CHUNK_HEIGHT
+#define CHUNK_HEIGHT 128
+#endif
 
 #include <string>
 #include <ostream>
 #include <unordered_set>
 #include <mutex>
+#include <bitset>
 
 #include "coordinate.hpp"
 #include "types.hpp"
@@ -22,42 +29,36 @@ namespace Craft
      */
     struct Block
     {
-        /// The Coordinate struct of the blocks position.
-        Coordinate* coord{nullptr};
+        Block(const Coordinate& coord, blockTexture textures, BlockType type)
+            : chunkRelativeCoord{coord}
+            , textures{textures}
+            , type{type}
+        {}
+//        /// The position of the chunk the coord is in.
+        Coordinate chunkRelativeCoord;
         /// The information of the blocks neighbors.
         NeighborsInfo neighborInfo{};
         /// The enum of the block's type.
         BlockType type{};
         /// The information for the blocks textures and color mapping.
         blockTexture textures{};
-        ~Block()
-        {
-            delete coord;
-        }
-        /// << Operator for troubleshooting.
-        friend std::ostream& operator<<(std::ostream &os, const Block &block)
-        {
-            os << "Block( " << block.type << ", Coordinate(" << block.coord->x << ", " << block.coord->y << ", " << block.coord->z << ") )";
-            return os;
-        }
-
-        /// << Operator for troubleshooting.
-        friend std::ostream& operator<<(std::ostream &os, const Block* block)
-        {
-            os << "Block( " << block->type << ", Coordinate(" << block->coord->x << ", " << block->coord->y << ", " << block->coord->z << ") )";
-            return os;
-        }
     };
     /**
      * A function for determining if a block is next to another block.
      *
-     * @param coords:    A set containing all of the coordinates hashed together.
-     *                   For the hash function see coordinate.hpp
-     * @param currBlock: The current block to be checked.
+     * Only ran for the inner blocks <X: [1, 14], Z: [1, 14], Y: [0, 128]>
+     *
+     * @param blockCoords: A set containing all of the coordinates hashed together.
+     *                     For the hash function see coordinate.hpp
+     * @param blockIdx:    The index of the current block.
+     * @param x:           The x position of the block (relative to chunk space.)
+     * @param y:           The y position of the block (relative to chunk space.)
+     * @param z:           The z position of the block (relative to chunk space.)
+     * @param currBlock:   The current block to be checked.
      */
     void updateNeighbors(
-        std::unordered_set<size_t>* coords,
-        std::mutex* coordsMutex,
+        std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT> blockCoords,
+        int blockIdx, int x, int y, int z,
         Block* currBlock
     );
     /**
@@ -69,7 +70,7 @@ namespace Craft
      */
     void fillVerticesBufferData(
         Block* currBlock,
-        float* vPointer, int vIdx
+        int* vPointer, int vIdx
     );
     /**
      * A function for filling the element buffer's data.
@@ -92,6 +93,66 @@ namespace Craft
     int getVerticesCount();
     /// Retrieve the number of Elements needed to draw a Cube: 6 per side * visible sides [0,6]
     int getElementSize(Block* currBlock);
+    /**
+     * Determine whether a block on the left edge has a block next to it in the next chunk.
+     *
+     * @param leftChunkBlockCoords: The blockCoords of the chunk to the left.
+     * @param x:                    The x position of the current block (relative to chunk space.)
+     * @param y:                    The y position of the current block (relative to chunk space.)
+     * @param z:                    The z position of the current block (relative to chunk space.)
+     * @param currBlock:            The current block to be checked.
+     * @return:                     True if the neighbor was updates, false if the neighbor is the same.
+     */
+    bool updateLeftEdgeNeighbors(
+            std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT> leftChunkBlockCoords,
+            int x, int y, int z,
+            Block* currBlock
+    );
+    /**
+     * Determine whether a block on the right edge has a block next to it in the next chunk.
+     *
+     * @param rightChunkBlockCoords: The blockCoords of the chunk to the right.
+     * @param x:                     The x position of the current block (relative to chunk space.)
+     * @param y:                     The y position of the current block (relative to chunk space.)
+     * @param z:                     The z position of the current block (relative to chunk space.)
+     * @param currBlock:             The current block to be checked.
+     * @return:                      True if the neighbor was updates, false if the neighbor is the same.
+     */
+    bool updateRightEdgeNeighbors(
+            std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT> rightChunkBlockCoords,
+            int x, int y, int z,
+            Block* currBlock
+    );
+    /**
+     * Determine whether a block on the front edge has a block next to it in the next chunk.
+     *
+     * @param frontChunkBlockCoords: The blockCoords of the chunk to the front.
+     * @param x:                     The x position of the current block (relative to chunk space.)
+     * @param y:                     The y position of the current block (relative to chunk space.)
+     * @param z:                     The z position of the current block (relative to chunk space.)
+     * @param currBlock:             The current block to be checked.
+     * @return:                      True if the neighbor was updates, false if the neighbor is the same.
+     */
+    bool updateFrontEdgeNeighbors(
+            std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT> frontChunkBlockCoords,
+            int x, int y, int z,
+            Block* currBlock
+    );
+    /**
+     * Determine whether a block on the back edge has a block next to it in the next chunk.
+     *
+     * @param backChunkBlockCoords: The blockCoords of the chunk to the back.
+     * @param x:                    The x position of the current block (relative to chunk space.)
+     * @param y:                    The y position of the current block (relative to chunk space.)
+     * @param z:                    The z position of the current block (relative to chunk space.)
+     * @param currBlock:            The current block to be checked.
+     * @return:                     True if the neighbor was updates, false if the neighbor is the same.
+     */
+    bool updateBackEdgeNeighbors(
+            std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT> backChunkBlockCoords,
+            int x, int y, int z,
+            Block* currBlock
+    );
 }
 
 #endif //OPENGLDEMO_BLOCK_HPP

@@ -12,13 +12,13 @@ namespace Craft {
             Engine::Program* program,
             unsigned int width,
             unsigned int height,
-            std::unordered_set<size_t>* coords,
+            std::unordered_map<Coordinate2D, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords,
             std::mutex* coordsMutex
     )
         : coords{coords}
-        , playerX{16.0f}
-        , playerY{5.0f}
-        , playerZ{-16.0f}
+        , playerX{0.0f}
+        , playerY{130.0f}
+        , playerZ{0.0f}
         , window{window}
         , camera{window, program, width, height, playerX, playerY, playerZ}
         , coordsMutex{coordsMutex}
@@ -36,14 +36,15 @@ namespace Craft {
     }
     bool Player::blockBelowPlayer()
     {
-        float roundedX = round(playerX),
-              roundedY = round(playerY),
-              roundedZ = round(playerZ);
-
-        Coordinate playerCoord{roundedX, roundedY, roundedZ};
-        size_t altCoord = playerCoord.add(0.0f, -playerHeight, 0.0f);
-        std::lock_guard<std::mutex> lock(*coordsMutex);
-        return coords->find(altCoord) != coords->end();
+//        float roundedX = round(playerX),
+//              roundedY = round(playerY),
+//              roundedZ = round(playerZ);
+//
+//        Coordinate playerCoord{roundedX, roundedY, roundedZ};
+//        size_t altCoord = playerCoord.add(0.0f, -playerHeight, 0.0f);
+//        std::lock_guard<std::mutex> lock(*coordsMutex);
+//        return coords->find(altCoord) != coords->end();
+    return true;
     }
 //    bool Player::blockInFrontPlayer()
 //    {
@@ -91,20 +92,20 @@ namespace Craft {
             cameraPos += glm::vec3(0.0f, -1.0f, 0.0f) * cameraWalkingSpeed;
         }
 
-        bool stopFall = blockBelowPlayer();
-
-        if (isFalling && stopFall)
-        {
-            isFalling = false;
-        }
-        else if (isFalling && !stopFall)
-        {
-            cameraPos.y -= fallingSpeed;
-        }
-        else if (!isFalling && !stopFall)
-        {
-            isFalling = true;
-        }
+//        bool stopFall = blockBelowPlayer();
+//
+//        if (isFalling && stopFall)
+//        {
+//            isFalling = false;
+//        }
+//        else if (isFalling && !stopFall)
+//        {
+//            cameraPos.y -= fallingSpeed;
+//        }
+//        else if (!isFalling && !stopFall)
+//        {
+//            isFalling = true;
+//        }
 
         playerX = cameraPos.x;
         playerY = cameraPos.y;

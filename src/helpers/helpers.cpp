@@ -86,6 +86,11 @@ void setFloat(GLuint program, const std::string &name, float value)
     GLint loc = getLoc(program, name);
     glUniform1f(loc, value);
 }
+void setVec2(GLuint program, const std::string &name, glm::vec2 value)
+{
+    GLint loc = getLoc(program, name);
+    glUniform2fv(loc, 1, glm::value_ptr(value));
+}
 void setVec4(GLuint program, const std::string &name, glm::vec4 value)
 {
     GLint loc = getLoc(program, name);
