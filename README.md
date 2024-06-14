@@ -2,6 +2,12 @@
 
 Welcome to the OpenGL Demo project! This project is a learning exercise inspired by the tutorials on [Learn OpenGL](https://learnopengl.com/). As I progress through the tutorials, I will be updating and expanding this repository.
 
+## Preview
+
+![areal_shot](./src/assets/aerial_shot.png)
+
+![areal_shot](./src/assets/ground_shot.png)
+
 ## Getting Started
 
 ### Prerequisites
@@ -110,26 +116,10 @@ Additionally, you can use the mouse to look around.
 
 The project is organized into the following main components:
 
+- **assets**: All assets needed for the game to run (shaders/textures/metadata).
+- **craft**: This folder will contain all code needed for generating the minecraft-like world.
 - **helpers**: Helper functions to be used globally.
 - **setup**: Code for setting up and running the application (may change name in future).
-- **shaders**: The GLSL Shaders used. May add additional folders to group various shaders as I move through chapters.
-- **craft**: This folder will contain all code needed for generating the minecraft-like world.
-- **helpers**: This folder will contain helper headers and cpp files that will be used throughout the project.
-
-### Example Usage
-
-```cpp
-#include "app.hpp"
-
-int main() {
-    Engine::Application app;
-    if (!app.initialize()) {
-        return -1;
-    }
-    app.run();
-    return 0;
-}
-```
 
 ### Contact
 
