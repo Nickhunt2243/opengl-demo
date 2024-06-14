@@ -4,9 +4,11 @@ Welcome to the OpenGL Demo project! This project is a learning exercise inspired
 
 ## Preview
 
+Below are two pictures of me rendering 21x21 chunks, each containing 16 x 16 x 128 blocks.
+
 ![areal_shot](./src/assets/aerial_shot.png)
 
-![areal_shot](./src/assets/ground_shot.png)
+![ground_shot](./src/assets/ground_shot.png)
 
 ## Getting Started
 
