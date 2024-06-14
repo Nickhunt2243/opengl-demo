@@ -10,7 +10,7 @@ namespace Engine
     bool Camera::firstMouse = true;
     float Camera::lastX = 0.0f;
     float Camera::lastY = 0.0f;
-    float Camera::yaw = -90.0f;
+    float Camera::yaw = 0.0f;
     float Camera::pitch = 0.0f;
 
     Camera::Camera(

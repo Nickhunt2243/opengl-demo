@@ -83,6 +83,14 @@ void setInt(GLuint program, const std::string &name, int value);
  */
 void setFloat(GLuint program, const std::string &name, float value);
 /**
+ * Set a 2x1 vector within the OpenGL program.
+ *
+ * @param program: The given OpenGL program identifier.
+ * @param name:    The name of the shader parameter.
+ * @param value:   The value to set.
+ */
+void setVec2(GLuint program, const std::string &name, glm::vec2 value);
+/**
  * Set a 4x1 vector within the OpenGL program.
  *
  * @param program: The given OpenGL program identifier.

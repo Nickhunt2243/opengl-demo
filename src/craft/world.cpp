@@ -1,16 +1,10 @@
-//
-// Created by admin on 6/8/2024.
-//
-
 #ifndef CHUNK_WIDTH
 #define CHUNK_WIDTH 16
 #endif
 
-#define VISIBLE_CHUNKS 5
-#define MAX_STORED_CHUNKS (VISIBLE_CHUNKS + 4)
+#define VISIBLE_CHUNKS 15                      // must be odd.
+#define MAX_STORED_CHUNKS (VISIBLE_CHUNKS + 3) // must be odd.
 #define CHUNK_BOUNDS ((VISIBLE_CHUNKS - 1) / 2)
-#define MAX_STORED_BOUNDS ((MAX_STORED_CHUNKS - 1) / 2)
-#define NUM_CHUNKS (WORLD_WIDTH * WORLD_WIDTH) /// 7 x 7
 
 #include "world.hpp"
 
@@ -30,15 +24,18 @@ namespace Craft
         calcChunkBounds();
     }
 
-    void World::calcChunkBounds()
+    Coordinate2D World::calcChunkBounds()
     {
-        float playerOriginX = round(player.playerX / 16.0f) * 16.0f;
-        float playerOriginZ = round(player.playerZ / 16.0f) * 16.0f;
-        playerOriginCoord = Coordinate2D{playerOriginX, playerOriginZ};
-        chunkStartX = (int) playerOriginX - (CHUNK_BOUNDS * 16);
-        chunkStartZ = (int) playerOriginZ - (CHUNK_BOUNDS * 16);
-        chunkEndX = chunkStartX + (VISIBLE_CHUNKS * 16);
-        chunkEndZ = chunkStartZ + (VISIBLE_CHUNKS * 16);
+        float playerOriginX = round(player.playerX / 16.0f);
+        float playerOriginZ = round(player.playerZ / 16.0f);
+        Coordinate2D newPlayerOrigin{playerOriginX, playerOriginZ};
+        Coordinate2D diff = newPlayerOrigin - playerOriginCoord;
+        playerOriginCoord = newPlayerOrigin;
+        chunkStartX = (int) playerOriginX - (CHUNK_BOUNDS);
+        chunkStartZ = (int) playerOriginZ - (CHUNK_BOUNDS);
+        chunkEndX = chunkStartX + (VISIBLE_CHUNKS);
+        chunkEndZ = chunkStartZ + (VISIBLE_CHUNKS);
+        return diff;
     }
     World::~World()
     {
@@ -53,7 +50,7 @@ namespace Craft
         Coordinate2D currChunkCoord{(float) x, (float) z};
         {
             std::lock_guard<std::mutex> lock(chunkMutex);
-            chunks[currChunkCoord] = new Chunk(&coords, &pool, &futures, &coordsMutex);
+            chunks[currChunkCoord] = new Chunk(program->getProgram(), (float) x, (float) z, &coords, &coordsMutex);
         }
         chunks[currChunkCoord]->initChunk(x, z);
         chunks[currChunkCoord]->initBufferData();
@@ -65,9 +62,9 @@ namespace Craft
         textures = new Craft::Textures();
         textures->initTextures(program->getProgram());
         Craft::Chunk::textures = textures;
-        for (int x=chunkStartX;x<chunkEndX; x+=16)
+        for (int x=chunkStartX;x<chunkEndX; x++)
         {
-            for (int z=chunkStartZ;z<chunkEndZ; z+=16)
+            for (int z=chunkStartZ;z<chunkEndZ; z++)
             {
                 if (chunks.find({(float) x, (float) z}) == chunks.end())
                 {
@@ -75,12 +72,12 @@ namespace Craft
                 }
             }
         }
-
-        for (auto chunk: chunks)
-        {
-            chunk.second->initElementBuffer();
+        for (int x=chunkStartX;x<chunkEndX; x++) {
+            for (int z = chunkStartZ; z < chunkEndZ; z++) {
+                chunks[{(float) x, (float) z}]->updateNeighborInfo();
+                chunks[{(float) x, (float) z}]->initElementBuffer();
+            }
         }
-        futures.clear();
         if (!player.initPlayer())
         {
             return false;
@@ -92,54 +89,96 @@ namespace Craft
     bool World::updateWorld()
     {
         // Get player x and z as the origin of a chunk
-        float playerOriginX = round(player.playerX / 16.0f) * 16.0f;
-        float playerOriginZ = round(player.playerZ / 16.0f) * 16.0f;
+        float playerOriginX = round(player.playerX / 16.0f);
+        float playerOriginZ = round(player.playerZ / 16.0f);
         // Check if the player is in a new origin chunk
         if (playerOriginCoord.x != playerOriginX || playerOriginCoord.z != playerOriginZ) {
             // If player is, then initialize the additional chunks
-            calcChunkBounds();
-            std::vector<Coordinate2D> chunksToAdd{};
-            for (int x=chunkStartX;x<chunkEndX; x+=16)
+            Coordinate2D directionDiff = calcChunkBounds();
+            int actualChunkStartX = chunkStartX,
+                actualChunkEndX = chunkEndX,
+                actualChunkStartZ = chunkStartZ,
+                actualChunkEndZ = chunkEndZ;
+            if (directionDiff.x > 0)
             {
-                for (int z=chunkStartZ;z<chunkEndZ; z+=16)
-                {
-                    Coordinate2D currChunkCoord{(float) x, (float) z};
-                    if (chunks.find(currChunkCoord) == chunks.end())
-                    {
-                        chunksToAdd.push_back(currChunkCoord);
-                    }
-                }
+                actualChunkStartX = chunkEndX - 1;
             }
+            else if (directionDiff.x < 0)
+            {
+                actualChunkEndX = chunkStartX + 1;
+            }
+            else if (directionDiff.z > 0)
+            {
+                actualChunkStartZ = chunkEndZ - 1;
+            }
+            else if (directionDiff.z < 0)
+            {
+                actualChunkEndZ = chunkStartZ + 1;
+            }
+
             futures.emplace_back(
-                std::async(std::launch::async, [this, chunksToAdd]()
+                std::async(std::launch::async, [this, actualChunkStartX, actualChunkEndX, actualChunkStartZ, actualChunkEndZ, directionDiff]()
                 {
-                    for (auto coord: chunksToAdd) {
-                        initChunk((int) coord.x, (int) coord.z);
+                    std::lock_guard<std::mutex> lock(initOneSideChunksMutex);
+                    for (int x=actualChunkStartX;x<actualChunkEndX; x++)
+                    {
+                        for (int z=actualChunkStartZ;z<actualChunkEndZ; z++)
+                        {
+                            // Create new Chunks
+                            Coordinate2D currChunkCoord{(float) x, (float) z};
+                            if (chunks.find(currChunkCoord) == chunks.end())
+                            {
+                                initChunk((int) currChunkCoord.x, (int) currChunkCoord.z);
+                            }
+                            if (directionDiff.x > 0)
+                            {
+                                chunks[currChunkCoord - directionDiff]->updateChunkRight(&chunks[currChunkCoord]->blockCoords);
+                            }
+                            else if (directionDiff.x < 0)
+                            {
+                                chunks[currChunkCoord - directionDiff]->updateChunkLeft(&chunks[currChunkCoord]->blockCoords);
+                            }
+                            else if (directionDiff.z > 0)
+                            {
+                                chunks[currChunkCoord - directionDiff]->updateChunkFront(&chunks[currChunkCoord]->blockCoords);
+                            }
+                            else if (directionDiff.z < 0)
+                            {
+                                chunks[currChunkCoord - directionDiff]->updateChunkBack(&chunks[currChunkCoord]->blockCoords);
+                            }
+                        }
                     }
-                    for (auto coord: chunksToAdd) {
-                        chunks[coord]->initElementBuffer();
+                    for (int x=actualChunkStartX;x<actualChunkEndX; x++) {
+                        for (int z = actualChunkStartZ; z < actualChunkEndZ; z++) {
+                            chunks[{(float) x, (float) z}]->updateNeighborInfo();
+                            chunks[{(float) x, (float) z}]->initElementBuffer();
+                        }
                     }
                 })
             );
-        }
 
-        auto minChunkX = (float) (playerOriginX - (MAX_STORED_BOUNDS * 16)),
-             minChunkZ = (float) (playerOriginZ - (MAX_STORED_BOUNDS * 16)),
-             maxChunkX = (float) (playerOriginX + (MAX_STORED_BOUNDS * 16)),
-             maxChunkZ = (float) (playerOriginZ + (MAX_STORED_BOUNDS * 16));
-
-        auto chunkIter = chunks.begin();
-        while(chunkIter != chunks.end())
-        {
-            if (chunkIter->first.x < minChunkX || chunkIter->first.x > maxChunkX ||
-                chunkIter->first.z < minChunkZ || chunkIter->first.z > maxChunkZ)
+            // This method of deletion is slower, but safer in my
+            // opinion than calculating which chunks we should delete.
+            auto chunkIter= chunks.begin();
+            float diff = (int) (MAX_STORED_CHUNKS / 2);
+            while (chunkIter != chunks.end())
             {
-                delete chunkIter->second;
-                chunkIter = chunks.erase(chunkIter);
-                continue;
+                Coordinate2D currCoord = chunkIter->first;
+                if (
+                        currCoord.x < playerOriginX - (diff) ||
+                        currCoord.x > playerOriginX + (diff) ||
+                        currCoord.z < playerOriginZ - (diff) ||
+                        currCoord.z > playerOriginZ + (diff)
+                    )
+                {
+                    delete chunks[currCoord];
+                    chunkIter = chunks.erase(chunkIter);
+                    continue;
+                }
+                chunkIter++;
             }
-            chunkIter++;
         }
+
         if (player.updatePlayer())
         {
             return false;
@@ -162,9 +201,11 @@ namespace Craft
 
     bool World::drawWorld()
     {
-        for (int x=chunkStartX;x<chunkEndX; x+=16)
+//        chunks[Coordinate2D{0, 0}]->drawChunk();
+//        chunks[Coordinate2D{1, 0}]->drawChunk();
+        for (int x=chunkStartX;x<chunkEndX; x++)
         {
-            for (int z=chunkStartZ;z<chunkEndZ; z+=16)
+            for (int z=chunkStartZ;z<chunkEndZ; z++)
             {
                 Coordinate2D currChunkCoord{(float) x, (float) z};
                 if (chunks.find(currChunkCoord) != chunks.end()) {

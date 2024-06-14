@@ -66,11 +66,11 @@ namespace Craft
             std::unordered_map<BlockType, blockTexture>& textureMapping
         )
     {
-        glm::vec4 colorMapping{1.0, 1.0, 1.0, 0.0};
+        glm::vec4 colorMapping{255, 255, 255, 0};
         if (blockType == BlockType::GRASS && blockFace == "top")
         {
             // Green color mapping for grass block top.
-            colorMapping = glm::vec4(0.5065, 0.8296, 0.2516, 0.8);
+            colorMapping = glm::vec4(129, 226, 64, 204);
         }
         auto data = new textureData{texLayer, colorMapping};
         std::lock_guard<std::mutex> lock(mutex);

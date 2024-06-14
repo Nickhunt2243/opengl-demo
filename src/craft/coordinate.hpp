@@ -5,6 +5,7 @@
 #ifndef OPENGLDEMO_COORDINATE_HPP
 #define OPENGLDEMO_COORDINATE_HPP
 #include <functional>
+#include <glm/glm.hpp>
 
 namespace Craft
 {
@@ -50,10 +51,7 @@ namespace Craft
     /// A struct containing coordinate information for a given x and z position.
     struct Coordinate2D
     {
-        Coordinate2D(
-                float x, float z
-        ) : x{x}, z{z}
-        {}
+        Coordinate2D(float x, float z) : x{x}, z{z} {}
         /// The x position of the object.
         float x;
         /// The z position of the object.
@@ -74,11 +72,51 @@ namespace Craft
             size_t hz = std::hash<float>()(z+dZ);
             return hx ^ (hz << 1); // Combine the hashes
         }
-
-        inline static size_t compute_hash(float x, float z) {
-            size_t hx = std::hash<float>()(x);
-            size_t hz = std::hash<float>()(z);
-            return hx ^ (hz << 1); // Combine the hashes
+        /**
+         * The subtraction operator for a 2D Coordinate.
+         *
+         * @param rhs: The right hand coordinate to subtract.
+         * @return:    A 2D coordinate with the subtracted values.
+         */
+        inline Coordinate2D operator -(Coordinate2D rhs) const {
+            return Coordinate2D{x - rhs.x, z - rhs.z};
+        }
+        /**
+         * The subtraction operator for 2D Coordinates that allows you to subtract both elements by a single value.
+         *
+         * @param diff: The value to be subtracted.
+         * @return:     A 2D coordinate with the subtracted values.
+         */
+        inline Coordinate2D operator -(float diff) const {
+            return Coordinate2D{x - diff, z - diff};
+        }
+        /**
+         * The multiplication operator for a 2D Coordinate.
+         *
+         * @param scalar: The scalar to be used in the multiplication.
+         * @return:       A 2D coordinate with the values scaled.
+         */
+        inline Coordinate2D operator *(float scalar) const {
+            return Coordinate2D{scalar * x, scalar *  z};
+        }
+        /**
+         * The << operator for a 2D coordinate. Used for debugging purposes.
+         *
+         * @param os:    The stream to to be inserted into.
+         * @param coord: The coordinate to input into the stream.
+         * @return:      The stream with the updated coordinate string.
+         */
+        friend std::ostream& operator <<(std::ostream& os, const Coordinate2D& coord)
+        {
+            return os << "Coord2D(X: " << coord.x << ", Z: " << coord.z << ");";
+        }
+        /**
+         * A glm::vec2 cast function for ease of sending data to openGL.
+         *
+         * @return: A glm::vec2 representing the 2D coordinate.
+         */
+        operator glm::vec2() const {
+            return {x, z};
         }
     };
 }
