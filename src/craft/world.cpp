@@ -2,7 +2,7 @@
 #define CHUNK_WIDTH 16
 #endif
 
-#define VISIBLE_CHUNKS 15                      // must be odd.
+#define VISIBLE_CHUNKS 21                      // must be odd.
 #define MAX_STORED_CHUNKS (VISIBLE_CHUNKS + 3) // must be odd.
 #define CHUNK_BOUNDS ((VISIBLE_CHUNKS - 1) / 2)
 
