@@ -17,18 +17,6 @@ namespace Craft
             textureData* currTexture
         )
     {
-//        if (coordX == 1 && coordY == 1 && coordZ == 1 && u == 1 && v == 0 && normalType == 0) {
-//            std::cout << "CoordX Data: " << std::bitset<32>(coordX).to_string() << std::endl;
-//            std::cout << "CoordZ Data: " << std::bitset<32>(coordZ).to_string() << std::endl;
-//            std::cout << "CoordY Data: " << std::bitset<32>(coordY).to_string() << std::endl;
-//            std::cout << "Textur Data: " << std::bitset<32>((int) currTexture->layer).to_string() << std::endl;
-//            std::cout << "U Valu Data: " << std::bitset<32>(u).to_string() << std::endl;
-//            std::cout << "V Valu Data: " << std::bitset<32>(v).to_string() << std::endl;
-//            std::cout << "Normal Data: " << std::bitset<32>(normalType).to_string() << std::endl;
-//
-//
-//
-//        }
         int blockData = 0;
         blockData = blockData | (coordX);                         // 5 bits
         blockData = blockData | (coordZ << 5);                    // 5 bits | 10 total
@@ -38,41 +26,11 @@ namespace Craft
         blockData = blockData | (v << 22);                        // 1 bit  | 23 total
         blockData = blockData | (normalType << 23);               // 3 bit  | 26 total [0, 5] values
 
-//        if (coordX == 6 && coordY == 6 && coordZ == 6 && u == 1 && v == 0 && normalType == 0) {
-//        std::cout << "Block int : " << blockData <<  ",: " << std::bitset<32>(blockData).to_string() << std::endl;
-//        std::cout << "Block Data: " << std::bitset<32>(blockData).to_string() << std::endl;
-
-//        int x = blockData & 31;                         // 5 bits
-//        int z = (blockData >> 5) & 31;                  // 5 bits
-//        int y = (blockData >> 10) & 255;                 // 8 bits
-//        int a_tex = (blockData >> 18) & 7;   // 2 bits
-//        int newU = (blockData >> 21) & 1;                   // 1 bits
-//        int newV = (blockData >> 22) & 1;               // 1 bits
-//        int newNormalType = (blockData >> 23) & 7; // 3 bits
-//        if (
-//                coordX != x ||
-//                        coordZ != z ||
-//                        coordY != y ||
-//                        currTexture->layer != a_tex ||
-//                        u != newU ||
-//                        v != newV ||
-//                        normalType != newNormalType
-//                ) {
-//                std::cout << "CoordX Data Expected: " << coordX << ", actual" << x << std::endl;
-//                std::cout << "CoordZ Data Expected: " << coordZ << ", actual" << z << std::endl;
-//                std::cout << "CoordY Data Expected: " << coordY << ", actual" << y << std::endl;
-//                std::cout << "Textur Data Expected: " << currTexture->layer << ", actual" << a_tex << std::endl;
-//                std::cout << "U Valu Data Expected: " << u << ", actual" << newU << std::endl;
-//                std::cout << "V Valu Data Expected: " << v << ", actual" << newV << std::endl;
-//                std::cout << "Normal Data Expected: " << normalType << ", actual" << newNormalType << std::endl;
-//        }
-//        }
-//        std::cout << "Block Data: " << blockData << std::endl;
         int colorMapData = 0;
-        colorMapData = colorMapData | ((int) currTexture->colorMapping.r);         // 4 bits
-        colorMapData = colorMapData | ((int) currTexture->colorMapping.g << 8);  // 4 bits
+        colorMapData = colorMapData | ((int) currTexture->colorMapping.r);        // 8 bits
+        colorMapData = colorMapData | ((int) currTexture->colorMapping.g << 8);   // 8 bits
         colorMapData = colorMapData | ((int) currTexture->colorMapping.b << 16);  // 8 bits
-        colorMapData = colorMapData | ((int) currTexture->colorMapping.a << 24);       // 1 bit
+        colorMapData = colorMapData | ((int) currTexture->colorMapping.a << 24);  // 8 bits
         vPointer[vIdx] = blockData;
         vPointer[vIdx+1] = colorMapData;
 
@@ -182,16 +140,17 @@ namespace Craft
     }
     void updateNeighbors(
             std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT> blockCoords,
-            int blockIdx, int x, int y, int z,
+            int x, int y, int z,
             Block* currBlock
         )
     {
-        int topIdx    = blockIdx + CHUNK_WIDTH * CHUNK_WIDTH,
-            bottomIdx = blockIdx - CHUNK_WIDTH * CHUNK_WIDTH,
-            frontIdx  = blockIdx + CHUNK_WIDTH,
-            backIdx   = blockIdx - CHUNK_WIDTH,
-            rightIdx  = blockIdx + 1,
-            leftIdx   = blockIdx - 1;
+        int bitsetIdx = (y * CHUNK_WIDTH * CHUNK_WIDTH) + (z * CHUNK_WIDTH) + x;
+        int topIdx    = bitsetIdx + CHUNK_WIDTH * CHUNK_WIDTH,
+            bottomIdx = bitsetIdx - CHUNK_WIDTH * CHUNK_WIDTH,
+            frontIdx  = bitsetIdx + CHUNK_WIDTH,
+            backIdx   = bitsetIdx - CHUNK_WIDTH,
+            rightIdx  = bitsetIdx + 1,
+            leftIdx   = bitsetIdx - 1;
 
         // Top
         if (
@@ -209,28 +168,28 @@ namespace Craft
         }
         // front
         if (
-                z < 15 && frontIdx < CHUNK_WIDTH && !blockCoords[frontIdx]
+                z < 15 && !blockCoords[frontIdx]
             )
         {
             currBlock->neighborInfo.front = 1;
         }
         // right
         if (
-                x < 15 && rightIdx < CHUNK_WIDTH && !blockCoords[rightIdx]
+                x < 15 && !blockCoords[rightIdx]
             )
         {
             currBlock->neighborInfo.right = 1;
         }
         // back
         if (
-                z > 0 && backIdx > 0 && !blockCoords[backIdx]
+                z > 0 && !blockCoords[backIdx]
             )
         {
             currBlock->neighborInfo.back = 1;
         }
         // left
         if (
-                x > 0 && leftIdx > 0 && !blockCoords[leftIdx]
+                x > 0 && !blockCoords[leftIdx]
             )
         {
             currBlock->neighborInfo.left = 1;
@@ -256,7 +215,7 @@ namespace Craft
         // If block is on left side (x = 0) then we need to find same z and y
         // value at the left chunk at the 15th x idx.
         int neighborInLeftChunk = (y * CHUNK_WIDTH * CHUNK_WIDTH) + (z * CHUNK_WIDTH) + 15;
-        bool rerun = currBlock->neighborInfo.left == !leftChunkBlockCoords[neighborInLeftChunk];
+        bool rerun = currBlock->neighborInfo.left != !leftChunkBlockCoords[neighborInLeftChunk];
         currBlock->neighborInfo.left = !leftChunkBlockCoords[neighborInLeftChunk];
         return rerun;
     }
@@ -271,7 +230,7 @@ namespace Craft
         // value at the left chunk at the 15th x idx.
         int neighborInRightChunk = (y * CHUNK_WIDTH * CHUNK_WIDTH) + (z * CHUNK_WIDTH) + 0;
 
-        bool rerun = currBlock->neighborInfo.right == !rightChunkBlockCoords[neighborInRightChunk];
+        bool rerun = currBlock->neighborInfo.right != !rightChunkBlockCoords[neighborInRightChunk];
         currBlock->neighborInfo.right = !rightChunkBlockCoords[neighborInRightChunk];
         return rerun;
     }
@@ -285,7 +244,7 @@ namespace Craft
         // If block is on front side (z = 15) then we need to find same z and y
         // value at the left chunk at the 15th x idx.
         int neighborInFrontChunk = (y * CHUNK_WIDTH * CHUNK_WIDTH) + (0 * CHUNK_WIDTH) + x;
-        bool rerun = currBlock->neighborInfo.front == !frontChunkBlockCoords[neighborInFrontChunk];
+        bool rerun = currBlock->neighborInfo.front != !frontChunkBlockCoords[neighborInFrontChunk];
         currBlock->neighborInfo.front = !frontChunkBlockCoords[neighborInFrontChunk];
         return rerun;
     }
@@ -299,7 +258,7 @@ namespace Craft
         // If block is on left side (z = 0) then we need to find same z and y
         // value at the left chunk at the 15th x idx.
         int neighborInBackChunk = (y * CHUNK_WIDTH * CHUNK_WIDTH) + (15 * CHUNK_WIDTH) + x;
-        bool rerun = currBlock->neighborInfo.back == !backChunkBlockCoords[neighborInBackChunk];
+        bool rerun = currBlock->neighborInfo.back != !backChunkBlockCoords[neighborInBackChunk];
         currBlock->neighborInfo.back = !backChunkBlockCoords[neighborInBackChunk];
         return rerun;
     }

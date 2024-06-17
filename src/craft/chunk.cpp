@@ -1,8 +1,3 @@
-//
-// Created by admin on 5/26/2024.
-//
-#include <iostream>
-
 #include <string>
 #include <unordered_set>
 #include <sstream>
@@ -10,9 +5,9 @@
 #include <random>
 
 #include "chunk.hpp"
-#define Y_STEP_VALUE 8
-#define VERT_STEP_VALUE 16 * 16
+#include "../helpers/noise.hpp"
 #define CHUNK_OFFSET 0.5f
+#define CHUNK_BASE_HEIGHT 100;
 namespace Craft
 {
     Textures* Chunk::textures = nullptr;
@@ -47,39 +42,36 @@ namespace Craft
         }
     }
 
-    void Chunk::initChunk(int chunkOriginX, int chunkOriginZ) {
+    void Chunk::initChunk() {
+        BlockType blockType = BlockType::GRASS;
 
-        BlockType blockType = BlockType::STONE;
-        std::random_device rd; // Seed the random number generator with a non-deterministic value
-        std::mt19937 gen(rd()); // Mersenne Twister generator
-        // Create a distribution for integers in the range [min, max]
-        std::uniform_int_distribution<> dis(-1, 0);
-        // Generate a random number
-        int random_number;
-        random_number = dis(gen);
-        if (random_number == -1) {
-            blockType = BlockType::STONE;
-        } else if (random_number == 0) {
-            blockType = BlockType::DIRT;
-        } else {
-            blockType = BlockType::GRASS;
-        }
         int bitsetIdx;
-        random_number = dis(gen);
-        if (random_number == -1) {
-            blockType = BlockType::STONE;
-        } else if (random_number == 0) {
-            blockType = BlockType::DIRT;
-        } else {
-            blockType = BlockType::GRASS;
-        }
+        std::random_device rd; // Seed the random number generator with a non-deterministic value
+        std::mt19937 gen(44); // Mersenne Twister generator
+        // Create a distribution for integers in the range [min, max]
+        std::uniform_int_distribution<> dis(1, 100);
+        // Generate a random number
+        float random_amplitude = (float) dis(gen) / 100.0f;
+        float random_frequency = (float) dis(gen) / 100.0f;
+        Craft::Noise noiseGenerator(44);
+
         for (int xIdx=0; xIdx<CHUNK_WIDTH; xIdx++)
         {
             for (int zIdx=0; zIdx<CHUNK_WIDTH; zIdx++)
             {
-                for (int yIdx=0; yIdx<CHUNK_HEIGHT; yIdx++)
+                float yHeight = noiseGenerator.fractalNoise(
+                    ((chunkPos.x * 16.0f) + (float) xIdx) / 7,
+                    100.0f / 7,
+                    ((chunkPos.z * 16.0f) + (float) zIdx) / 7,
+                    10,
+                    0.25f,
+                    random_amplitude,
+                    random_frequency
+                ) * 7;
+                float yHeightFloat = yHeight + CHUNK_BASE_HEIGHT;
+                int yHeightFinal = (int) round(yHeightFloat);
+                for (int yIdx=0; yIdx<yHeightFinal; yIdx++)
                 {
-
                     bitsetIdx = (yIdx * CHUNK_WIDTH * CHUNK_WIDTH) + (zIdx * CHUNK_WIDTH) + xIdx;
                     Coordinate coord{(float) xIdx, (float) yIdx, (float) zIdx};
                     blockTexture texture = textures->getTexture(blockType);
@@ -96,100 +88,92 @@ namespace Craft
     }
     void Chunk::updateNeighborInfo()
     {
-        int bitsetIdx;
-        int blockIdx = 0;
         std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* leftChunkBitMap = nullptr;
         std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* rightChunkBitMap = nullptr;
         std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* frontChunkBitMap = nullptr;
         std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* backChunkBitMap = nullptr;
-        Coordinate2D leftChunkCoord = Coordinate2D{chunkPos.x - 1.0f, chunkPos.z};
-        Coordinate2D rightChunkCoord = Coordinate2D{chunkPos.x + 1.0f, chunkPos.z};
         Coordinate2D frontChunkCoord = Coordinate2D{chunkPos.x, chunkPos.z + 1.0f};
+        Coordinate2D rightChunkCoord = Coordinate2D{chunkPos.x + 1.0f, chunkPos.z};
         Coordinate2D backChunkCoord = Coordinate2D{chunkPos.x, chunkPos.z - 1.0f};
-        if (coords->find(leftChunkCoord) != coords->end()) {
+        Coordinate2D leftChunkCoord = Coordinate2D{chunkPos.x - 1.0f, chunkPos.z};
+        if (coords->find(leftChunkCoord) != coords->end())
+        {
             leftChunkBitMap = (*coords)[leftChunkCoord];
         }
-        if (coords->find(rightChunkCoord) != coords->end()) {
+        if (coords->find(rightChunkCoord) != coords->end())
+        {
             rightChunkBitMap = (*coords)[rightChunkCoord];
         }
-        if (coords->find(frontChunkCoord) != coords->end()) {
+        if (coords->find(frontChunkCoord) != coords->end())
+        {
             frontChunkBitMap = (*coords)[frontChunkCoord];
         }
-        if (coords->find(backChunkCoord) != coords->end()) {
+        if (coords->find(backChunkCoord) != coords->end())
+        {
             backChunkBitMap = (*coords)[backChunkCoord];
         }
-
-
-        for (int x=0; x<CHUNK_WIDTH; x++)
+        int x, y, z;
+        for (auto block: blocks)
         {
-            for (int z=0; z<CHUNK_WIDTH; z++)
+            x = (int) block->chunkRelativeCoord.x;
+            y = (int) block->chunkRelativeCoord.y;
+            z = (int) block->chunkRelativeCoord.z;
+            // Block is front
+            if (z == 15 && frontChunkBitMap != nullptr)
             {
-                for (int y=0; y<CHUNK_HEIGHT; y++)
-                {
-                    // 0 * 128
-                    bitsetIdx = (y * CHUNK_WIDTH * CHUNK_WIDTH) + (z * CHUNK_WIDTH) + x;
-                    // If block is air, skip
-                    if (!blockCoords[bitsetIdx]) {
-                        continue;
-                    }
-                    // Block is front
-                    if (z == 15 && frontChunkBitMap != nullptr)
-                    {
-                        updateFrontEdgeNeighbors(*frontChunkBitMap, x, y, z, blocks[blockIdx]);
-                    }
-                    else if (z == 15)
-                    {
-                        blocks[blockIdx]->neighborInfo.front = 1;
-                    }
-                    // Block is right side
-                    if (x == 15 && rightChunkBitMap != nullptr)
-                    {
-                        updateRightEdgeNeighbors(*rightChunkBitMap, x, y, z, blocks[blockIdx]);
-                    }
-                    else if (x == 15)
-                    {
-                        blocks[blockIdx]->neighborInfo.right = 1;
-                    }
-                    // Block is back
-                    if (z == 0 && backChunkBitMap != nullptr)
-                    {
-                        updateBackEdgeNeighbors(*backChunkBitMap, x, y, z, blocks[blockIdx]);
-                    }
-                    else if (z == 0)
-                    {
-                        blocks[blockIdx]->neighborInfo.back = 1;
-                    }
-                    // Block is left side
-                    if (x == 0 && leftChunkBitMap != nullptr)
-                    {
-                        updateLeftEdgeNeighbors(*leftChunkBitMap, x, y, z, blocks[blockIdx]);
-                    }
-                    else if (x == 0)
-                    {
-                        blocks[blockIdx]->neighborInfo.left = 1;
-                    }
-                    updateNeighbors(blockCoords, bitsetIdx, x, y, z, blocks[blockIdx]);
-                    blockIdx++;
-                }
+                updateFrontEdgeNeighbors(*frontChunkBitMap, x, y, z, block);
             }
+            else if (z == 15)
+            {
+                block->neighborInfo.front = 1;
+            }
+            // Block is right side
+            if (x == 15 && rightChunkBitMap != nullptr)
+            {
+                updateRightEdgeNeighbors(*rightChunkBitMap, x, y, z, block);
+            }
+            else if (x == 15)
+            {
+                block->neighborInfo.right = 1;
+            }
+            // Block is back
+            if (z == 0 && backChunkBitMap != nullptr)
+            {
+                updateBackEdgeNeighbors(*backChunkBitMap, x, y, z, block);
+            }
+            else if (z == 0)
+            {
+                block->neighborInfo.back = 1;
+            }
+            // Block is left side
+            if (x == 0 && leftChunkBitMap != nullptr)
+            {
+                updateLeftEdgeNeighbors(*leftChunkBitMap, x, y, z, block);
+            }
+            else if (x == 0)
+            {
+                block->neighborInfo.left = 1;
+            }
+            updateNeighbors(blockCoords, x, y, z, block);
         }
+
+        needToInitElements = true;
     }
     void Chunk::updateChunkFront(
             std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* frontChunkBitMap
         )
     {
         int z = 15;
-        int blockIdx = 0;
         bool rerunElements = true;
-        for (int x = 0; x < CHUNK_WIDTH; x++)
-        {
-            for (int y = 0; y < CHUNK_HEIGHT; y++)
-            {
-                bool result = updateFrontEdgeNeighbors(*frontChunkBitMap, x, y, z, blocks[blockIdx]);
-                rerunElements |= result;
-                blockIdx++;
+        int x, y;
+        for (auto block: blocks) {
+            if (block->chunkRelativeCoord.z != 15) {
+                continue;
             }
-            blockIdx += CHUNK_WIDTH;
+            x = (int) block->chunkRelativeCoord.x;
+            y = (int) block->chunkRelativeCoord.y;
+            bool result = updateFrontEdgeNeighbors(*frontChunkBitMap, x, y, z, block);
+            rerunElements |= result;
         }
         needToInitElements = rerunElements;
     }
@@ -197,17 +181,17 @@ namespace Craft
             std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* rightChunkBitMap
         )
     {
-        int x = 15;
-        int blockIdx = 15 * CHUNK_HEIGHT * CHUNK_WIDTH;
+        int xToCheck = 15;
         bool rerunElements = true;
-        for (int z = 0; z < CHUNK_WIDTH; z++)
-        {
-            for (int y = 0; y < CHUNK_HEIGHT; y++)
-            {
-                bool result = updateRightEdgeNeighbors(*rightChunkBitMap, x, y, z, blocks[blockIdx]);
-                rerunElements |= result;
-                blockIdx++;
+        int z, y;
+        for (auto block: blocks) {
+            if (block->chunkRelativeCoord.x != (float) xToCheck) {
+                continue;
             }
+            z = (int) block->chunkRelativeCoord.z;
+            y = (int) block->chunkRelativeCoord.y;
+            bool result = updateRightEdgeNeighbors(*rightChunkBitMap, xToCheck, y, z, block);
+            rerunElements |= result;
         }
         needToInitElements = rerunElements;
     }
@@ -216,17 +200,17 @@ namespace Craft
         )
     {
         int z = 0;
-        int blockIdx = 0;
         bool rerunElements = true;
-        for (int x = 0; x < CHUNK_WIDTH; x++)
-        {
-            for (int y = 0; y < CHUNK_HEIGHT; y++)
-            {
-                bool result = updateBackEdgeNeighbors(*backChunkBitMap, x, y, z, blocks[blockIdx]);
-                rerunElements |= result;
-                blockIdx++;
+        int x, y;
+        for (auto block: blocks) {
+            if (block->chunkRelativeCoord.z != 0) {
+                continue;
             }
-            blockIdx = x * CHUNK_HEIGHT * CHUNK_WIDTH;
+            x = (int) block->chunkRelativeCoord.x;
+            y = (int) block->chunkRelativeCoord.y;
+
+            bool result = updateBackEdgeNeighbors(*backChunkBitMap, x, y, z, block);
+            rerunElements |= result;
         }
         needToInitElements = rerunElements;
     }
@@ -235,16 +219,16 @@ namespace Craft
         )
     {
         int x = 0;
-        int blockIdx = 0;
         bool rerunElements = true;
-        for (int z = 0; z < CHUNK_WIDTH; z++)
-        {
-            for (int y = 0; y < CHUNK_HEIGHT; y++)
-            {
-                bool result = updateBackEdgeNeighbors(*leftChunkBitMap, x, y, z, blocks[blockIdx]);
-                rerunElements |= result;
-                blockIdx++;
+        int z, y;
+        for (auto block: blocks) {
+            if (block->chunkRelativeCoord.x != 0) {
+                continue;
             }
+            z = (int) block->chunkRelativeCoord.z;
+            y = (int) block->chunkRelativeCoord.y;
+            bool result = updateLeftEdgeNeighbors(*leftChunkBitMap, x, y, z, block);
+            rerunElements |= result;
         }
         needToInitElements = rerunElements;
     }
@@ -255,88 +239,43 @@ namespace Craft
         {
             elementCount += getElementSize(block);
         }
-        delete elementBuffer;
+        delete[] elementBuffer;
         elementBuffer = new unsigned int[elementCount];
         int eIdx = 0,
             currBlocksVerticesIdx = 0;
-        int count = 0;
-        Block* currBlock;
-        for ( int i=0; i<blocks.size(); i++ )
-        {
-            currBlock = blocks[i];
+        for (auto block: blocks) {
+            fillElementBufferData(block, elementBuffer, eIdx, currBlocksVerticesIdx);
             currBlocksVerticesIdx += 6 * 4;
-            eIdx += getElementSize(currBlock);
-            count++;
-            if (count == blocks.size() / VERT_STEP_VALUE)
-            {
-                fillElementBuffer(i, eIdx, currBlocksVerticesIdx);
-                count = 0;
-            }
+            eIdx += getElementSize(block);
         }
-        needToInitElements = true;
     }
     void Chunk::initBufferData()
     {
         vboSize = (int) blocks.size() * getVerticesCount();
+        delete[] vertexBufferData;
         vertexBufferData = new int[vboSize];
         int vIdx = 0;
-        int count = 0;
-        for ( int i=0; i<blocks.size(); i++ )
+        for (auto block: blocks)
         {
             // Testing with one block.
+            fillVerticesBufferData(block, vertexBufferData, vIdx);
             vIdx += getVerticesCount();
-            count++;
-            if (count == blocks.size() / VERT_STEP_VALUE)
-            {
-                fillVertexBuffer(i, vIdx);
-                count = 0;
-            }
         }
         isReadyToInitVAO = true;
     }
-    void Chunk::fillElementBuffer(
-            int endIdx, int startingEIdx, int currBlocksVerticesIdx
-        )
-    {
-        int startIdx = endIdx - ((int) blocks.size() / VERT_STEP_VALUE) + 1;
-        int eIdx = startingEIdx;
-        Block* currBlock;
-
-        for (int i=endIdx; i>=startIdx; i--)
-        {
-            currBlock = blocks[i];
-            currBlocksVerticesIdx -= 6 * 4;
-            eIdx -= getElementSize(currBlock);
-            fillElementBufferData(currBlock, elementBuffer, eIdx, currBlocksVerticesIdx);
-        }
-    }
-    void Chunk::fillVertexBuffer(
-            int endIdx, int startingVIdx
-        )
-    {
-        int startIdx = endIdx - ((int) blocks.size() / VERT_STEP_VALUE) + 1;
-        int vIdx = startingVIdx;
-        Block* currBlock;
-
-        for (int i=endIdx; i>=startIdx; i--)
-        {
-            currBlock = blocks[i];
-            vIdx -= getVerticesCount();
-            fillVerticesBufferData(currBlock, vertexBufferData, vIdx);
-        }
-    }
     void Chunk::initEBO()
     {
+        initElementBuffer();
         // Initialize the element buffer.
         glBindVertexArray(VAO);
         // Bind and initialize EBO
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         auto indexSize = (GLsizeiptr) (elementCount * sizeof(GLuint));
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexSize, elementBuffer, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexSize, elementBuffer, GL_STATIC_DRAW);
         glBindVertexArray(0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        needToInitElements = true;
         // We need VAO (and VBO by default) to be initialized prior to calling initEBO so after this we can draw.
+        needToInitElements = false;
         canDrawChunk = true;
     }
     void Chunk::initVAO()

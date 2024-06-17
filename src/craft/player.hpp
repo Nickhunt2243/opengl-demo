@@ -56,7 +56,7 @@ namespace Craft
               playerZ;
     private:
         /// The walking speed of the camera.
-        float cameraWalkingSpeed{0.1f};
+        float cameraWalkingSpeed{0.2f};
         /// The height of the player.
         float playerHeight{2.0f};
         /// The width of player from side to side.

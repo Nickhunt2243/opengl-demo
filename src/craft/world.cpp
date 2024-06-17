@@ -2,7 +2,7 @@
 #define CHUNK_WIDTH 16
 #endif
 
-#define VISIBLE_CHUNKS 21                      // must be odd.
+#define VISIBLE_CHUNKS 7                       // must be odd.
 #define MAX_STORED_CHUNKS (VISIBLE_CHUNKS + 3) // must be odd.
 #define CHUNK_BOUNDS ((VISIBLE_CHUNKS - 1) / 2)
 
@@ -11,10 +11,10 @@
 namespace Craft
 {
     World::World(
-            Engine::Window* window,
-            Engine::Program* program,
-            unsigned int width,
-            unsigned int height
+        Engine::Window* window,
+        Engine::Program* program,
+        unsigned int width,
+        unsigned int height
     )
         : coords{}
         , program{program}
@@ -52,7 +52,7 @@ namespace Craft
             std::lock_guard<std::mutex> lock(chunkMutex);
             chunks[currChunkCoord] = new Chunk(program->getProgram(), (float) x, (float) z, &coords, &coordsMutex);
         }
-        chunks[currChunkCoord]->initChunk(x, z);
+        chunks[currChunkCoord]->initChunk();
         chunks[currChunkCoord]->initBufferData();
     }
 
@@ -72,10 +72,11 @@ namespace Craft
                 }
             }
         }
-        for (int x=chunkStartX;x<chunkEndX; x++) {
-            for (int z = chunkStartZ; z < chunkEndZ; z++) {
+        for (int x=chunkStartX;x<chunkEndX; x++)
+        {
+            for (int z = chunkStartZ; z < chunkEndZ; z++)
+            {
                 chunks[{(float) x, (float) z}]->updateNeighborInfo();
-                chunks[{(float) x, (float) z}]->initElementBuffer();
             }
         }
         if (!player.initPlayer())
@@ -92,7 +93,8 @@ namespace Craft
         float playerOriginX = round(player.playerX / 16.0f);
         float playerOriginZ = round(player.playerZ / 16.0f);
         // Check if the player is in a new origin chunk
-        if (playerOriginCoord.x != playerOriginX || playerOriginCoord.z != playerOriginZ) {
+        if (playerOriginCoord.x != playerOriginX || playerOriginCoord.z != playerOriginZ)
+        {
             // If player is, then initialize the additional chunks
             Coordinate2D directionDiff = calcChunkBounds();
             int actualChunkStartX = chunkStartX,
@@ -120,9 +122,9 @@ namespace Craft
                 std::async(std::launch::async, [this, actualChunkStartX, actualChunkEndX, actualChunkStartZ, actualChunkEndZ, directionDiff]()
                 {
                     std::lock_guard<std::mutex> lock(initOneSideChunksMutex);
-                    for (int x=actualChunkStartX;x<actualChunkEndX; x++)
+                    for (int x = actualChunkStartX; x < actualChunkEndX; x++)
                     {
-                        for (int z=actualChunkStartZ;z<actualChunkEndZ; z++)
+                        for (int z = actualChunkStartZ; z < actualChunkEndZ; z++)
                         {
                             // Create new Chunks
                             Coordinate2D currChunkCoord{(float) x, (float) z};
@@ -130,35 +132,42 @@ namespace Craft
                             {
                                 initChunk((int) currChunkCoord.x, (int) currChunkCoord.z);
                             }
+                        }
+                    }
+                    for (int x = actualChunkStartX; x < actualChunkEndX; x++)
+                    {
+                        for (int z = actualChunkStartZ; z < actualChunkEndZ; z++)
+                        {
+                            Coordinate2D currChunkCoord{(float) x, (float) z};
+
                             if (directionDiff.x > 0)
                             {
-                                chunks[currChunkCoord - directionDiff]->updateChunkRight(&chunks[currChunkCoord]->blockCoords);
+                                chunks[currChunkCoord - directionDiff]->updateChunkRight(
+                                        &chunks[currChunkCoord]->blockCoords);
                             }
                             else if (directionDiff.x < 0)
                             {
-                                chunks[currChunkCoord - directionDiff]->updateChunkLeft(&chunks[currChunkCoord]->blockCoords);
+                                chunks[currChunkCoord - directionDiff]->updateChunkLeft(
+                                        &chunks[currChunkCoord]->blockCoords);
                             }
                             else if (directionDiff.z > 0)
                             {
-                                chunks[currChunkCoord - directionDiff]->updateChunkFront(&chunks[currChunkCoord]->blockCoords);
+                                chunks[currChunkCoord - directionDiff]->updateChunkFront(
+                                        &chunks[currChunkCoord]->blockCoords);
                             }
                             else if (directionDiff.z < 0)
                             {
-                                chunks[currChunkCoord - directionDiff]->updateChunkBack(&chunks[currChunkCoord]->blockCoords);
+                                chunks[currChunkCoord - directionDiff]->updateChunkBack(
+                                        &chunks[currChunkCoord]->blockCoords);
                             }
-                        }
-                    }
-                    for (int x=actualChunkStartX;x<actualChunkEndX; x++) {
-                        for (int z = actualChunkStartZ; z < actualChunkEndZ; z++) {
-                            chunks[{(float) x, (float) z}]->updateNeighborInfo();
-                            chunks[{(float) x, (float) z}]->initElementBuffer();
+                            chunks[currChunkCoord]->updateNeighborInfo();
                         }
                     }
                 })
             );
 
-            // This method of deletion is slower, but safer in my
-            // opinion than calculating which chunks we should delete.
+            // This method of deletion is slower, but safer, in my
+            // opinion, than calculating which chunks we should delete.
             auto chunkIter= chunks.begin();
             float diff = (int) (MAX_STORED_CHUNKS / 2);
             while (chunkIter != chunks.end())
@@ -178,7 +187,6 @@ namespace Craft
                 chunkIter++;
             }
         }
-
         if (player.updatePlayer())
         {
             return false;
@@ -201,8 +209,7 @@ namespace Craft
 
     bool World::drawWorld()
     {
-//        chunks[Coordinate2D{0, 0}]->drawChunk();
-//        chunks[Coordinate2D{1, 0}]->drawChunk();
+//        chunks[{(float) 0.0f, (float) 0.0f}]->drawChunk();
         for (int x=chunkStartX;x<chunkEndX; x++)
         {
             for (int z=chunkStartZ;z<chunkEndZ; z++)
