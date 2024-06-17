@@ -55,15 +55,11 @@ OpenGLDemo/
 
 ### Running the Project
 
-#### Through Release (Still requires some dependencies from VS.)
-1. Go to current release.
-2. Download most recent zip.
-3. Unzip the file.
-4. Go into bin/ and run the OpenGLDemo.exe file.
-
-#### Through Cloning (better off cloning)
-1. Clone the Reposity (see below for cloning steps).
-2. Go into bin/ and run the OpenGLDemo.exe file.
+#### Through Cloning / Downloading
+1. Go to the top and click the "Code" drop down.
+2. **Download** the zip file
+3. Extract zip
+5. Go into bin/ and run the OpenGLDemo.exe file.
 
 ### Building the Project
 
