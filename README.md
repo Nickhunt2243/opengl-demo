@@ -3,7 +3,7 @@
 Welcome to the OpenGL Demo project! This project is a learning exercise inspired by the tutorials on [Learn OpenGL](https://learnopengl.com/). As I progress through the tutorials, I will be updating and expanding this repository.
 
 ## Preview
-
+### Below are two images of 21x21 chunks, each containing 16 x 16 x 128 blocks.
 #### Aerial view with simple borders for better perspective.
 ![areal_shot](src/assets/progress_images/aerial_shot_terrain.png)
 
