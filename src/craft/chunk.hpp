@@ -33,13 +33,8 @@ namespace Craft
             std::mutex* coordsMutex
         );
         ~Chunk();
-        /**
-         * Initialize a Chunk found at the x, z coordinates.
-         *
-         * @param x: The x coordinate of the center of the chunk.
-         * @param z: The z coordinate of the center of the chunk.
-         */
-        void initChunk(int x, int z);
+        /// Initialize a Chunk found at the x, z coordinates.
+        void initChunk();
         /// A function to draw the chunk using OpenGL.
         void drawChunk();
         /// A helper function for initializing all neighbor information.
@@ -129,21 +124,6 @@ namespace Craft
         void initEBO();
         /// Initialize the Vertex Array Object.
         void initVAO();
-        /**
-         * Fill the element buffer with the elements to be drawn.
-         *
-         * @param endIdx:                The ending idx of blocks.
-         * @param startingEIdx:          The starting index of the element buffer.
-         * @param currBlocksVerticesIdx: The current number of the vertex buffer to draw.
-         */
-        void fillElementBuffer(int endIdx, int startingEIdx, int currBlocksVerticesIdx);
-        /**
-         * Fill the vertex buffer with the vertex information.
-         *
-         * @param endIdx:       The ending index of blocks.
-         * @param startingVIdx: The starting index of the vertex buffer.
-         */
-        void fillVertexBuffer(int endIdx, int startingVIdx);
     };
 }
 

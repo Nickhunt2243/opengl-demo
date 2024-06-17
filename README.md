@@ -4,9 +4,11 @@ Welcome to the OpenGL Demo project! This project is a learning exercise inspired
 
 ## Preview
 
-![areal_shot](./src/assets/aerial_shot.png)
+#### Aerial view with simple borders for better perspective.
+![areal_shot](src/assets/progress_images/aerial_shot_terrain.png)
 
-![areal_shot](./src/assets/ground_shot.png)
+#### Ground view.
+![ground_shot](src/assets/progress_images/ground_shot_terrain.png)
 
 ## Getting Started
 

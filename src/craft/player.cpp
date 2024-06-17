@@ -17,7 +17,7 @@ namespace Craft {
     )
         : coords{coords}
         , playerX{0.0f}
-        , playerY{130.0f}
+        , playerY{120.0f}
         , playerZ{0.0f}
         , window{window}
         , camera{window, program, width, height, playerX, playerY, playerZ}
@@ -64,12 +64,12 @@ namespace Craft {
         // Move Forward
         if (glfwGetKey(window->getWindow(), GLFW_KEY_W) == GLFW_PRESS)
         {
-            cameraPos += cameraWalkingSpeed * glm::vec3{cameraFront.x, 0.0, cameraFront.z};
+            cameraPos += cameraWalkingSpeed * glm::vec3{cameraFront.x, 0.0f, cameraFront.z};
         }
         // Move back
         if (glfwGetKey(window->getWindow(), GLFW_KEY_S) == GLFW_PRESS)
         {
-            cameraPos -= cameraWalkingSpeed * glm::vec3{cameraFront.x, 0.0, cameraFront.z};
+            cameraPos -= cameraWalkingSpeed * glm::vec3{cameraFront.x, 0.0f, cameraFront.z};
         }
         // Move left
         if (glfwGetKey(window->getWindow(), GLFW_KEY_A) == GLFW_PRESS)

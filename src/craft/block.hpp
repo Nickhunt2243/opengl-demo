@@ -50,7 +50,6 @@ namespace Craft
      *
      * @param blockCoords: A set containing all of the coordinates hashed together.
      *                     For the hash function see coordinate.hpp
-     * @param blockIdx:    The index of the current block.
      * @param x:           The x position of the block (relative to chunk space.)
      * @param y:           The y position of the block (relative to chunk space.)
      * @param z:           The z position of the block (relative to chunk space.)
@@ -58,7 +57,7 @@ namespace Craft
      */
     void updateNeighbors(
         std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT> blockCoords,
-        int blockIdx, int x, int y, int z,
+        int x, int y, int z,
         Block* currBlock
     );
     /**
