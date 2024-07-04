@@ -5,10 +5,10 @@ Welcome to the OpenGL Demo project! This project is a learning exercise inspired
 ## Preview
 ### Below are two images of 21x21 chunks, each containing 16 x 16 x 128 blocks.
 #### Aerial view with simple borders for better perspective.
-![areal_shot](src/assets/progress_images/aerial_shot_terrain.png)
+![areal_shot](external_assets/progress_images/aerial_shot_terrain.png)
 
 #### Video of ground view w/ collision.
-[Minecraft_Clone_Collision.mp4](src/assets/progress_images/Minecraft_Clone_Collision.mp4)
+[Minecraft_Clone_Collision.mp4](external_assets/progress_images/Minecraft_Clone_Collision.mp4)
 ## Getting Started
 
 ### Prerequisites
