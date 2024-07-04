@@ -34,6 +34,8 @@ uniform mat4 u_viewT;
 out vec2 texCoords;
 out int currTex;
 out flat vec4 colorMap;
+out vec2 a_blockPos;
+out flat vec3 a_norm;
 
 vec4 newPos = vec4(
     x + u_ChunkPos.x,
@@ -51,12 +53,14 @@ vec3[] normals = {
     {-1.0, 0.0, 0.0}
 };
 
-vec3 a_norm = normals[normalType];
+//vec3 a_norm = normals[normalType];
 
 void main()
 {
     gl_Position = u_projT * u_viewT * newPos;
+    a_blockPos = vec2(x, z);
     texCoords = a_uv;
     currTex = a_tex;
     colorMap = a_colorMap;
+    a_norm = normals[normalType];
 }

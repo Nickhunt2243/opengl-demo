@@ -7,6 +7,7 @@
 
 #include <unordered_set>
 
+#include "../helpers/timer.hpp"
 #include "player.hpp"
 #include "chunk.hpp"
 #include "../setup/program.hpp"
@@ -44,14 +45,14 @@ namespace Craft
          */
         bool drawWorld();
     private:
+        /// The game timer.
+        Engine::Timer timer;
         /// A pointer to the OpenGL program.
         Engine::Program* program;
         /// The camera object of the application.
         Player player;
-        /// The cube shape to be rendered.
-        Coordinate2D playerOriginCoord;
         /// The mapping of 2D coordinates to Chunk*
-        std::unordered_map<Coordinate2D, Chunk*> chunks{};
+        std::unordered_map<Coordinate2D<int>, Chunk*> chunks{};
         /// The pointer to the textures object, holding all information on the generated textures.
         Textures* textures{nullptr};
         /// The pool instance of the chunk.
@@ -70,8 +71,10 @@ namespace Craft
         int chunkEndX;
         /// The Z coordinate of the last chunk to render (exclusive).
         int chunkEndZ;
+        /// A Coordinate 2D for catching chunk difference failure and camera update failures.
+        Coordinate2D<int> failureCoord{-2, -2};
         /// A mapping of chunk coords to a block position bitmap.
-        std::unordered_map<Coordinate2D, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*> coords{};
+        std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*> coords{};
         /// The mutex for only allowing us to create one set of chunks at a time.
         std::mutex initOneSideChunksMutex{};
         /**
@@ -82,7 +85,7 @@ namespace Craft
          */
         void initChunk(int x, int z);
         /// Calculate the new bounds of the chunks to render.
-        Coordinate2D calcChunkBounds();
+        void updateChunkBounds();
     };
 }
 

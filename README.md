@@ -7,9 +7,8 @@ Welcome to the OpenGL Demo project! This project is a learning exercise inspired
 #### Aerial view with simple borders for better perspective.
 ![areal_shot](src/assets/progress_images/aerial_shot_terrain.png)
 
-#### Ground view.
-![ground_shot](src/assets/progress_images/ground_shot_terrain.png)
-
+#### Video of ground view w/ collision.
+[Minecraft_Clone_Collision.mp4](src/assets/progress_images/Minecraft_Clone_Collision.mp4)
 ## Getting Started
 
 ### Prerequisites
@@ -105,8 +104,9 @@ You can use:
 - s &#8594; Walk Backwards
 - a &#8594; Walk Left
 - d &#8594; Walk Right
-- space &#8594; Go up
-- left shift &#8594; Go down
+- f &#8594; Enable/Disable Flying
+- space &#8594; jump or fly up.
+- left shift &#8594; fly down (when enabled)
 
 Additionally, you can use the mouse to look around.
 

@@ -6,8 +6,8 @@
 #include "app.hpp"
 #include "../craft/textures.hpp"
 
-#define WINDOW_WIDTH 1500
-#define WINDOW_HEIGHT 1000
+#define WINDOW_WIDTH 1440
+#define WINDOW_HEIGHT 920
 #define VERT_SHADER_PATH "src/assets/shader/default.vert"
 #define GEOM_SHADER_PATH "src/assets/shader/default.geom"
 #define FRAG_SHADER_PATH "src/assets/shader/default.frag"

@@ -11,7 +11,7 @@
 #include <string>
 #include <stb/stb_image.h>
 
-//#include "block.hpp"
+#include "coordinate.hpp"
 
 namespace Craft
 {
@@ -24,6 +24,13 @@ namespace Craft
         ~textureData() {
             glDeleteTextures(1, &layer);
         }
+    };
+
+    /// A struct holding relavent block info for x/z block collision.
+    struct blockInfo {
+        int blockX;
+        int blockZ;
+        Coordinate2D<int> chunk;
     };
 
     /// A struct containing all the information of the block's textures.

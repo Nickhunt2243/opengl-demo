@@ -14,8 +14,8 @@ namespace Craft
 
     Chunk::Chunk(
             GLuint programId,
-            float x, float z,
-            std::unordered_map<Coordinate2D, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords,
+            int x, int z,
+            std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords,
             std::mutex* coordsMutex
     )
         : programId{programId}
@@ -46,12 +46,11 @@ namespace Craft
         BlockType blockType = BlockType::GRASS;
 
         int bitsetIdx;
-        std::random_device rd; // Seed the random number generator with a non-deterministic value
         std::mt19937 gen(44); // Mersenne Twister generator
         // Create a distribution for integers in the range [min, max]
         std::uniform_int_distribution<> dis(1, 100);
         // Generate a random number
-        float random_amplitude = (float) dis(gen) / 100.0f;
+        float random_amplitude = (float) dis(gen) / 10.0f;
         float random_frequency = (float) dis(gen) / 100.0f;
         Craft::Noise noiseGenerator(44);
 
@@ -60,14 +59,14 @@ namespace Craft
             for (int zIdx=0; zIdx<CHUNK_WIDTH; zIdx++)
             {
                 float yHeight = noiseGenerator.fractalNoise(
-                    ((chunkPos.x * 16.0f) + (float) xIdx) / 7,
+                    (float) ((chunkPos.x * 16) + xIdx) / 7.0f,
                     100.0f / 7,
-                    ((chunkPos.z * 16.0f) + (float) zIdx) / 7,
+                    (float) ((chunkPos.z * 16) + zIdx) / 7.0f,
                     10,
                     0.25f,
                     random_amplitude,
                     random_frequency
-                ) * 7;
+                ) * 7.0f;
                 float yHeightFloat = yHeight + CHUNK_BASE_HEIGHT;
                 int yHeightFinal = (int) round(yHeightFloat);
                 for (int yIdx=0; yIdx<yHeightFinal; yIdx++)
@@ -76,7 +75,10 @@ namespace Craft
                     Coordinate coord{(float) xIdx, (float) yIdx, (float) zIdx};
                     blockTexture texture = textures->getTexture(blockType);
                     auto newBlock = new Block(coord, texture, blockType);
-                    blocks.push_back(newBlock);
+                    {
+                        std::lock_guard<std::mutex> lock(blocksMutex);
+                        blocks.push_back(newBlock);
+                    }
                     blockCoords[bitsetIdx] = true;
                 }
             }
@@ -88,14 +90,15 @@ namespace Craft
     }
     void Chunk::updateNeighborInfo()
     {
+        std::lock_guard<std::mutex> lock(blocksMutex);
         std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* leftChunkBitMap = nullptr;
         std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* rightChunkBitMap = nullptr;
         std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* frontChunkBitMap = nullptr;
         std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* backChunkBitMap = nullptr;
-        Coordinate2D frontChunkCoord = Coordinate2D{chunkPos.x, chunkPos.z + 1.0f};
-        Coordinate2D rightChunkCoord = Coordinate2D{chunkPos.x + 1.0f, chunkPos.z};
-        Coordinate2D backChunkCoord = Coordinate2D{chunkPos.x, chunkPos.z - 1.0f};
-        Coordinate2D leftChunkCoord = Coordinate2D{chunkPos.x - 1.0f, chunkPos.z};
+        Coordinate2D<int> frontChunkCoord = Coordinate2D{chunkPos.x, chunkPos.z + 1};
+        Coordinate2D<int> rightChunkCoord = Coordinate2D{chunkPos.x + 1, chunkPos.z};
+        Coordinate2D<int> backChunkCoord = Coordinate2D{chunkPos.x, chunkPos.z - 1};
+        Coordinate2D<int> leftChunkCoord = Coordinate2D{chunkPos.x - 1, chunkPos.z};
         if (coords->find(leftChunkCoord) != coords->end())
         {
             leftChunkBitMap = (*coords)[leftChunkCoord];
@@ -163,6 +166,7 @@ namespace Craft
             std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* frontChunkBitMap
         )
     {
+        std::lock_guard<std::mutex> lock(blocksMutex);
         int z = 15;
         bool rerunElements = true;
         int x, y;
@@ -181,6 +185,7 @@ namespace Craft
             std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* rightChunkBitMap
         )
     {
+        std::lock_guard<std::mutex> lock(blocksMutex);
         int xToCheck = 15;
         bool rerunElements = true;
         int z, y;
@@ -199,6 +204,7 @@ namespace Craft
             std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* backChunkBitMap
         )
     {
+        std::lock_guard<std::mutex> lock(blocksMutex);
         int z = 0;
         bool rerunElements = true;
         int x, y;
@@ -218,6 +224,7 @@ namespace Craft
             std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* leftChunkBitMap
         )
     {
+        std::lock_guard<std::mutex> lock(blocksMutex);
         int x = 0;
         bool rerunElements = true;
         int z, y;
@@ -234,6 +241,7 @@ namespace Craft
     }
     void Chunk::initElementBuffer()
     {
+        std::lock_guard<std::mutex> lock(blocksMutex);
         elementCount = 0;
         for (auto & block: blocks)
         {
@@ -251,6 +259,7 @@ namespace Craft
     }
     void Chunk::initBufferData()
     {
+        std::lock_guard<std::mutex> lock(blocksMutex);
         vboSize = (int) blocks.size() * getVerticesCount();
         delete[] vertexBufferData;
         vertexBufferData = new int[vboSize];
@@ -317,7 +326,7 @@ namespace Craft
         }
         if (canDrawChunk) {
             glBindVertexArray(VAO);
-            setVec2(programId, "u_ChunkPos", (chunkPos - CHUNK_OFFSET) * 16.0f);
+            setVec2(programId, "u_ChunkPos", chunkPos * 16);
             glDrawElements(GL_TRIANGLES, (GLint) elementCount, GL_UNSIGNED_INT, nullptr);
             glBindVertexArray(0);
         }
