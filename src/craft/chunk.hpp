@@ -28,8 +28,8 @@ namespace Craft
     public:
         Chunk(
             GLuint programId,
-            float x, float z,
-            std::unordered_map<Coordinate2D, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords,
+            int x, int z,
+            std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords,
             std::mutex* coordsMutex
         );
         ~Chunk();
@@ -102,6 +102,8 @@ namespace Craft
         bool canDrawChunk{false};
         /// A mutex for accessing the coords set.
         std::mutex* coordsMutex;
+        /// A mutex for creating/accessing blocks
+        std::mutex blocksMutex{};
         /// The array of all blocks within this chunk.
         std::vector<Block*> blocks{};
         /// The vertex buffer array.
@@ -113,11 +115,11 @@ namespace Craft
         /// The number of elements to draw.
         int elementCount{0};
         /// The 2D coordinate (x and z) of the chunk.
-        Coordinate2D chunkPos;
+        Coordinate2D<int> chunkPos;
         /// The unsigned integer of the current program.
         GLuint programId;
         /// A pointer to the mapping of chunk coordinate to block coord bitset.
-        std::unordered_map<Coordinate2D, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords;
+        std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords;
         /// A Boolean of whether we need to initialize the EBO
         bool needToInitElements{false};
         /// Initialize the Element Buffer Object.
