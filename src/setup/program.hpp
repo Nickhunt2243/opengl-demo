@@ -1,5 +1,6 @@
 #ifndef OPENGLDEMO_PROGRAM_HPP
 #define OPENGLDEMO_PROGRAM_HPP
+#include <glad/glad.h>
 #include <string>
 #include <unordered_map>
 

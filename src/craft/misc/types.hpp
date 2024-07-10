@@ -26,11 +26,21 @@ namespace Craft
         }
     };
 
-    /// A struct holding relavent block info for x/z block collision.
+    /// A struct holding relevant block info for x/z block collision.
     struct blockInfo {
         int blockX;
         int blockZ;
         Coordinate2D<int> chunk;
+    };
+    /// A struct holding information about the in game time.
+    struct Time {
+        int hours;
+        int minutes;
+        float seconds;
+        [[nodiscard]] float getFullTime() const
+        {
+            return (float) hours + ((float) minutes / 60) + (seconds / 3600.0f);
+        }
     };
 
     /// A struct containing all the information of the block's textures.

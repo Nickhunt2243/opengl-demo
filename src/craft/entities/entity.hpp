@@ -18,11 +18,11 @@
 #include <bitset>
 #include <mutex>
 
-#include "coordinate.hpp"
-#include "../helpers/timer.hpp"
-#include "../setup/window.hpp"
-#include "../setup/program.hpp"
-#include "types.hpp"
+#include "../misc/coordinate.hpp"
+#include "../../helpers/timer.hpp"
+#include "../../setup/window.hpp"
+#include "../../setup/program.hpp"
+#include "../misc/types.hpp"
 
 namespace Craft
 {
@@ -57,6 +57,14 @@ namespace Craft
             long double left;
             long double right;
         };
+        [[nodiscard]] inline long double getWorldX() const
+        {
+            return (long double) (originChunk.x * 16) + entityX;
+        }
+        [[nodiscard]] inline long double getWorldZ() const
+        {
+            return (long double) (originChunk.z * 16) + entityZ;
+        }
     protected:
         /// The game timer.
         Engine::Timer* timer;
@@ -95,16 +103,27 @@ namespace Craft
          */
         blockInfo getBlockInfo(int blockX, int blockZ);
         /**
-         * A method to handle x/z collision. I made two Desmos pages to show how I handle the collision.
+         * A method to handle x/z head on collision.
          *
-         * Head on collision: https://www.desmos.com/calculator/k6fzl1xo3n
-         * Block edge collision: https://www.desmos.com/calculator/ffvcpr5cx6
+         * For more information and a visual of how we handle this view:
+         * https://www.desmos.com/calculator/k6fzl1xo3n
          *
          * @param xDirection: 1 if we are moving in +X direction, -1 if -X direction and 0 if moving in Z direction.
          * @param zDirection: 1 if we are moving in +Z direction, -1 if -Z direction and 0 if moving in X direction.
          * @return:           A Coordinate2D holding the x and z correction if colliding with another block.
          */
-        Coordinate2D<long double> entityCollidedWithBlock(int xDirection, int zDirection);
+        Coordinate2D<long double> entityCollidedHeadOn(int xDirection, int zDirection);
+        /**
+         * A method to handle x/z corner collision.
+         *
+         * For more information and a visual of how we handle this view:
+         * https://www.desmos.com/calculator/ffvcpr5cx6
+         *
+         * @param xDirection: 1 if we are moving in +X direction, -1 if -X direction and 0 if moving in Z direction.
+         * @param zDirection: 1 if we are moving in +Z direction, -1 if -Z direction and 0 if moving in X direction.
+         * @return:           A Coordinate2D holding the x and z correction if colliding with another block.
+         */
+        Coordinate2D<long double> entityCollidedAtCorner(int xDirection, int zDirection);
 
         /**
          * Calculate the Y displacement overtime when falling.

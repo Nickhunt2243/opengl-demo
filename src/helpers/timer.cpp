@@ -36,6 +36,7 @@ namespace Engine
     void Timer::resetTimer()
     {
         startTime = std::chrono::steady_clock::now();
+        prevTime = startTime;
         frames = 0;
     }
     float Timer::getFPS()

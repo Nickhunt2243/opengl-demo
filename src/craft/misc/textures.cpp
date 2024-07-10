@@ -3,10 +3,10 @@
 //
 
 #include "textures.hpp"
-#include <glm/glm.hpp>
+#include "glm/glm.hpp"
 #include <mutex>
 
-#include "../helpers/helpers.hpp"
+#include "../../helpers/helpers.hpp"
 
 namespace Craft
 {

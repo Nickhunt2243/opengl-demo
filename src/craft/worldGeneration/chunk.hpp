@@ -16,10 +16,11 @@
 #include <thread>
 #include <bitset>
 
-#include "../helpers/threadPool.hpp"
+#include "../../helpers/threadPool.hpp"
+#include "../../setup/program.hpp"
 #include "block.hpp"
-#include "textures.hpp"
-#include "coordinate.hpp"
+#include "../misc/textures.hpp"
+#include "../misc/coordinate.hpp"
 
 namespace Craft
 {
@@ -27,7 +28,7 @@ namespace Craft
     {
     public:
         Chunk(
-            GLuint programId,
+            Engine::Program* blockProgram,
             int x, int z,
             std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords,
             std::mutex* coordsMutex
@@ -35,8 +36,16 @@ namespace Craft
         ~Chunk();
         /// Initialize a Chunk found at the x, z coordinates.
         void initChunk();
+        /**
+         * A function to draw the chunk using OpenGL.
+         *
+         * For information on how I find the default light level view:
+         * https://www.desmos.com/calculator/yse4g8xec5
+         *
+         * @param gameTime: A struct containing the in-game time.
+         */
         /// A function to draw the chunk using OpenGL.
-        void drawChunk();
+        void drawChunk(Time gameTime);
         /// A helper function for initializing all neighbor information.
         void initBufferData();
         /// A static textures object.
@@ -117,7 +126,7 @@ namespace Craft
         /// The 2D coordinate (x and z) of the chunk.
         Coordinate2D<int> chunkPos;
         /// The unsigned integer of the current program.
-        GLuint programId;
+        Engine::Program* blockProgram;
         /// A pointer to the mapping of chunk coordinate to block coord bitset.
         std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords;
         /// A Boolean of whether we need to initialize the EBO

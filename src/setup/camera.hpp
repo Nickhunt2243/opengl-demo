@@ -18,10 +18,17 @@ namespace Engine
          *
          * @param window:  A pointer to the Window object.
          * @param program: A pointer to the Program object.
+         * @param worldProgram: A pointer to the Program object.
+         * @param width:        The width of the window.
+         * @param height:       The height of the window.
+         * @param x:            The x position of the player.
+         * @param y:            The y position of the player.
+         * @param z:            The z position of the player.
          */
         Camera(
             Window* window,
             Program* program,
+            Program* worldProgram,
             unsigned int width,
             unsigned int height,
             float x, float y, float z
@@ -58,8 +65,10 @@ namespace Engine
     private:
         /// A pointer to a window object.
         Window* window;
-        /// A pointer to a program object.
+        /// A pointer to a program object for block rendering.
         Program* program;
+        /// A pointer to a program object for generic rendering.
+        Program* worldProgram;
         /// The sensitivity of the camera.
         float sensitivity{0.075f};
         /// The height and width of the current window.
@@ -79,7 +88,6 @@ namespace Engine
         static float yaw;
         /// The current angle in degrees of the camera for looking up and down.
         static float pitch;
-
     };
 }
 

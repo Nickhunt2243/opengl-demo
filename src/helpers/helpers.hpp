@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "../craft/types.hpp"
+#include "../craft/misc/types.hpp"
 
 /// A struct containing information about a loaded image.
 struct ImageData {
