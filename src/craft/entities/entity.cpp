@@ -6,6 +6,7 @@
 #include "entity.hpp"
 
 #define PLAYER_BOUND 0.3l
+#define PLAYER_BOUND_SQRD (PLAYER_BOUND * PLAYER_BOUND)
 #define EPSILON 1e-4
 #define VERTICAL_TOLERANCE 1e-1
 #define MAX_BLOCKS (CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT)
@@ -37,22 +38,22 @@ namespace Craft
                 };
         if (blockZ < 0)
         {
-            info.blockZ = 15;
+            info.blockZ += 16;
             info.chunk.z -= 1;
         }
-        else if (blockZ > 15)
+        if (blockZ > 15)
         {
-            info.blockZ = 0;
+            info.blockZ -= 16;
             info.chunk.z += 1;
         }
-        else if (blockX < 0)
+        if (blockX < 0)
         {
-            info.blockX = 15;
+            info.blockX += 16;
             info.chunk.x -= 1;
         }
-        else if (blockX > 15)
+        if (blockX > 15)
         {
-            info.blockX = 0;
+            info.blockX -= 16;
             info.chunk.x += 1;
         }
         return info;
@@ -153,7 +154,7 @@ namespace Craft
         {
             return blockZToCheck > entityZ;
         }
-        else if (zDirection == -1)
+        else //if (zDirection == -1) condition must be
         {
             return blockZToCheck < entityZ;
         }
@@ -171,7 +172,7 @@ namespace Craft
         {
             return blockXToCheck > entityX;
         }
-        else if (zDirection == -1)
+        else // if (zDirection == -1) condition must be
         {
             return blockXToCheck < entityX;
         }
@@ -194,52 +195,97 @@ namespace Craft
         {
             return {scalarLeftRight, scalarFrontBack};
         }
-        else if (zDirection == -1)
+        else // if (zDirection == -1) condition must be this.
         {
             return {-scalarLeftRight, -scalarFrontBack};
         }
     }
     Coordinate2D<long double> calculateCorrection(
-            long double distanceToVertex,
             int blockX, int blockZ,
-            long double entityX, long double entityZ
+            long double entityX, long double entityZ,
+            int xDirection, int zDirection,
+            bool checkingLeft, bool checkingFront
         )
     {
-        long double xDistanceFromVertex = blockX - entityX;
-        long double zDistanceFromVertex = blockZ - entityZ;
-        // We find the angle from the player origin to the nearest vertex using the x and z coordinates respectively.
-        long double angleXPlayerVertex = asin(xDistanceFromVertex / distanceToVertex);
-        long double angleZPlayerVertex = acos(zDistanceFromVertex / distanceToVertex);
-        // From that angle we can derive the
-        long double xOffset = PLAYER_BOUND * sin(angleXPlayerVertex) - xDistanceFromVertex;
-        long double zOffset = PLAYER_BOUND * sin(angleZPlayerVertex) - zDistanceFromVertex;
-        return {-xOffset, -zOffset};
+        if ((checkingFront && xDirection == 1) || (!checkingFront && xDirection == -1))
+        {
+            long double zDiff = (long double) blockZ - entityZ;
+            float offset = (float) blockX - (float) (sqrt(PLAYER_BOUND_SQRD - (zDiff * zDiff)) + entityX);
+            return {offset, 0.0l};
+        }
+        else if ((checkingFront && xDirection == -1) || (!checkingFront && xDirection == 1))
+        {
+            long double zDiff = (long double) blockZ - entityZ;
+            float offset = (float) blockX - (float) (-sqrt(PLAYER_BOUND_SQRD - (zDiff * zDiff)) + entityX);
+            return {offset, 0.0l};
+        }
+        else if ((checkingFront && zDirection == 1) || (!checkingFront && zDirection == -1))
+        {
+            long double xDiff = (long double) blockX - entityX;
+            float offset = (float) blockZ - (float) (sqrt(PLAYER_BOUND_SQRD - (xDiff * xDiff)) + entityZ);
+            return {0.0l, offset};
+        }
+        else if ((checkingFront && zDirection == -1) || (!checkingFront && zDirection == 1))
+        {
+            long double xDiff = (long double) blockX - entityX;
+            float offset = (float) blockZ - (float) (-sqrt(PLAYER_BOUND_SQRD - (xDiff * xDiff)) + entityZ);
+            return {0.0l, offset};
+        }
+        return {0.0l, 0.0f};
     }
-    Coordinate2D<long double> Entity::entityCollidedWithBlock(int xDirection, int zDirection)
-    {
+    Coordinate2D<long double> Entity::entityCollidedHeadOn(int xDirection, int zDirection) {
         bool movingInXDir = xDirection != 0;
         // starting block to check
-        int blockXToCheck = (int) round(entityX);
-        int blockZToCheck = (int) round(entityZ);
+
+        int playerBlockX = (int) floor(entityX);
+        int playerBlockZ = (int) floor(entityZ);
+        int closestVertexX = (int) round(entityX);
+        int closestVertexZ = (int) round(entityZ);
         int topBlockY = (int) round(entityY) - 1;
         int bottomBlockY = topBlockY - 1;
-        std::vector<Coordinate2D<int>> blocksToCheck =
+
+        blockInfo info = getBlockInfo(closestVertexX, closestVertexZ);
+        // Blocks coordinates in world coordinates.
+        long double blockChunkWorldX = (info.chunk.x * 16) + info.blockX;
+        long double blockChunkWorldZ = (info.chunk.z * 16) + info.blockZ;
+        long double entityWorldX = getWorldX();
+        long double entityWorldZ = getWorldZ();
+
+        bool checkingFront = isCheckingFront(xDirection, zDirection, (int) blockChunkWorldX, (int) blockChunkWorldZ, entityWorldX, entityWorldZ);
+        bool checkingLeft = isCheckingLeft(xDirection, zDirection, (int) blockChunkWorldX, (int) blockChunkWorldZ, entityWorldX, entityWorldZ);
+        int diffX = 0, diffZ = 0;
+
+        // Find the two blocks to check based on the direction and players current block.
+        if (xDirection == 1)
         {
-            {blockXToCheck, blockZToCheck},
-            {blockXToCheck - 1, blockZToCheck},
-            {blockXToCheck, blockZToCheck - 1},
-            {blockXToCheck - 1, blockZToCheck - 1},
-        };
+            diffX = checkingFront ? 1 : -1;
+            diffZ = checkingLeft ? -1 : 1;
+        }
+        else if (xDirection == -1)
+        {
+            diffX = !checkingFront ? 1 : -1;
+            diffZ = !checkingLeft ? -1 : 1;
+        }
+        else if (zDirection == 1)
+        {
+            diffZ = checkingFront ? 1 : -1;
+            diffX = checkingLeft ? 1 : -1;
+        }
+        else if (zDirection == -1)
+        {
+            diffZ = !checkingFront ? 1 : -1;
+            diffX = !checkingLeft ? 1 : -1;
+        }
+        std::vector<Coordinate2D<int>> blocksToCheck =
+                {
+                        {playerBlockX + diffX, playerBlockZ},
+                        {playerBlockX, playerBlockZ + diffZ},
+                };
 
-        bool checkingFront = isCheckingFront(xDirection, zDirection, blockXToCheck, blockZToCheck, entityX, entityZ);
-        bool checkingLeft = isCheckingLeft(xDirection, zDirection, blockXToCheck, blockZToCheck, entityX, entityZ);
-
-
-        Coordinate2D<int> originBlock{(int) floor(entityX), (int) floor(entityZ)};
-        Coordinate2D<long double> offset{0.0l, 0.0l};
+        Coordinate2D<long double> correction{0.0l, 0.0l};
         Coordinate2D<long double> playerEdge = findPlayerEdge(xDirection, zDirection, checkingFront, checkingLeft);
         Coordinate2D<long double> edgeCoordX{entityX + playerEdge.x, entityZ};
-        Coordinate2D<long double> edgeCoordZ{entityX, entityZ + playerEdge.z};
+        Coordinate2D<long double> edgeCoordZ{entityX               , entityZ + playerEdge.z};
         if (edgeCoordX.x > 16)
         {
             edgeCoordX.x -= 16;
@@ -258,12 +304,9 @@ namespace Craft
         }
         int topBlockIdx;
         int bottomBlockIdx;
-        for (Coordinate2D<int> block: blocksToCheck)
-        {
-            // We skip the block the player is on as the player wouldn't be here if the collision is working..
-            if (block == originBlock) continue;
+        for (Coordinate2D<int> block: blocksToCheck) {
             // Checking the blockToChecks vertex to see if it is within the players bounds.
-            blockInfo info = getBlockInfo(block.x, block.z);
+            info = getBlockInfo(block.x, block.z);
 
             topBlockIdx = (topBlockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
             bottomBlockIdx = (bottomBlockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
@@ -272,7 +315,7 @@ namespace Craft
                                       (xDirection == -1 && !checkingLeft) ||
                                       (zDirection == 1 && !checkingFront) ||
                                       (zDirection == -1 && checkingFront)
-                                     ? 1 : 0;
+                                      ? 1 : 0;
 
             int blockOffsetPaddingX = (xDirection == 1 && !checkingFront) ||
                                       (xDirection == -1 && checkingFront) ||
@@ -282,53 +325,96 @@ namespace Craft
             if (
                     topBlockIdx >= 0 && topBlockIdx < MAX_BLOCKS && (*coords->at(info.chunk))[topBlockIdx] ||
                     bottomBlockIdx >= 0 && bottomBlockIdx < MAX_BLOCKS && (*coords->at(info.chunk))[bottomBlockIdx]
-                )
+                    )
             {
                 // Check if x edge is within the block.
                 if (
-                        offset.x == 0 &&
+                        correction.x == 0 &&
                         edgeCoordX.x - EPSILON >= info.blockX &&
                         edgeCoordX.x + EPSILON <= info.blockX + 1 &&
                         edgeCoordX.z - EPSILON >= info.blockZ &&
                         edgeCoordX.z + EPSILON <= info.blockZ + 1
-                    )
+                        )
                 {
-                    offset.x -= edgeCoordX.x - (info.blockX + blockOffsetPaddingX);
+                    correction.x -= edgeCoordX.x - (info.blockX + blockOffsetPaddingX);
                 }
                 else if (
-                        offset.z == 0 &&
+                        correction.z == 0 &&
                         edgeCoordZ.x - EPSILON >= info.blockX &&
                         edgeCoordZ.x + EPSILON <= info.blockX + 1 &&
                         edgeCoordZ.z - EPSILON >= info.blockZ &&
                         edgeCoordZ.z + EPSILON <= info.blockZ + 1
-                    )
+                        )
                 {
-                    offset.z -= edgeCoordZ.z - (info.blockZ + blockOffsetPaddingZ);
+                    correction.z -= edgeCoordZ.z - (info.blockZ + blockOffsetPaddingZ);
                 }
             }
         }
-        if (offset.x != 0.0l || offset.z != 0.0l) return offset;
+        return correction;
+    }
+    Coordinate2D<long double> Entity::entityCollidedAtCorner(int xDirection, int zDirection)
+    {
+        bool movingInXDir = xDirection != 0;
+        // starting block to check
+        int vertexXToCheck = (int) round(entityX);
+        int vertexZToCheck = (int) round(entityZ);
+        int topBlockY = (int) round(entityY) - 1;
+        int bottomBlockY = topBlockY - 1;
 
         // Checking the blockToChecks vertex to see if it is within the players bounds.
-        blockInfo info = getBlockInfo(blockXToCheck, blockZToCheck);
+        blockInfo info = getBlockInfo(vertexXToCheck, vertexZToCheck);
+        long double blockChunkWorldX = (info.chunk.x * 16) + info.blockX;
+        long double blockChunkWorldZ = (info.chunk.z * 16) + info.blockZ;
+        bool checkingFront = isCheckingFront(xDirection, zDirection, (int) blockChunkWorldX, (int) blockChunkWorldZ, getWorldX(), getWorldZ());
+        bool checkingLeft = isCheckingLeft(xDirection, zDirection, (int) blockChunkWorldX, (int) blockChunkWorldZ, getWorldX(), getWorldZ());
 
-        long double blockDistance = eucDistance(entityX, entityZ, info.blockX, info.blockZ);
-        if (blockDistance < PLAYER_BOUND)
+        long double blockDistance = eucDistance(blockChunkWorldX, blockChunkWorldZ, getWorldX(), getWorldZ());
+        if (blockDistance >= PLAYER_BOUND) return {0.0l, 0.0l};
+        // Update the blocks x and z to get the proper blocks starting coordinate
+        int blockXToCheck = vertexXToCheck;
+        int blockZToCheck = vertexZToCheck;
+
+        if (checkingLeft && xDirection == 1)
         {
-            for (Coordinate2D<int> block: blocksToCheck)
-            {
-                info = getBlockInfo(block.x, block.z);
+            blockZToCheck -= 1;
+        }
+        if (!checkingFront && xDirection == 1)
+        {
+            blockXToCheck -= 1;
+        }
+        if (!checkingLeft && xDirection == -1) {
+            blockZToCheck -= 1;
+        }
+        if (checkingFront && xDirection == -1)
+        {
+            blockXToCheck -= 1;
+        }
 
-                topBlockIdx = (topBlockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
-                bottomBlockIdx = (bottomBlockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
-                if (
-                    (topBlockIdx >= 0 && topBlockIdx < MAX_BLOCKS && (*coords->at(info.chunk))[topBlockIdx]) ||
-                    (bottomBlockIdx >= 0 && bottomBlockIdx < MAX_BLOCKS && (*coords->at(info.chunk))[bottomBlockIdx])
-                )
-                {
-                    return calculateCorrection(blockDistance, blockXToCheck, blockZToCheck, entityX, entityZ);
-                }
-            }
+        if (!checkingLeft && zDirection == 1)
+        {
+            blockXToCheck -= 1;
+        }
+        if (!checkingFront && zDirection == 1)
+        {
+            blockZToCheck -= 1;
+        }
+        if (checkingLeft && zDirection == -1)
+        {
+            blockXToCheck -= 1;
+        }
+        if (checkingFront && zDirection == -1)
+        {
+            blockZToCheck -= 1;
+        }
+        info = getBlockInfo(blockXToCheck, blockZToCheck);
+        int topBlockIdx = (topBlockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
+        int bottomBlockIdx = (bottomBlockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
+        if (
+                (topBlockIdx >= 0 && topBlockIdx < MAX_BLOCKS && (*coords->at(info.chunk))[topBlockIdx]) ||
+                (bottomBlockIdx >= 0 && bottomBlockIdx < MAX_BLOCKS && (*coords->at(info.chunk))[bottomBlockIdx])
+            )
+        {
+            return calculateCorrection(vertexXToCheck, vertexZToCheck, entityX, entityZ, xDirection, zDirection, checkingLeft, checkingFront);
         }
 
         return {0.0l, 0.0l};

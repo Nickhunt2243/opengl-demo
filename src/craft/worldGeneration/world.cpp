@@ -13,13 +13,16 @@ namespace Craft
     World::World(
         Engine::Window* window,
         Engine::Program* program,
+        Engine::Program* worldProgram,
         unsigned int width,
         unsigned int height
     )
         : coords{}
         , program{program}
+        , worldProgram{worldProgram}
         , timer()
-        , player{&timer, window, program, width, height, &coords}
+        , player{&timer, window, program, worldProgram, width, height, &coords}
+        , sun{worldProgram}
     {
         updateChunkBounds();
     }
@@ -43,7 +46,7 @@ namespace Craft
         Coordinate2D<int> currChunkCoord{x, z};
         {
             std::lock_guard<std::mutex> lock(chunkMutex);
-            chunks[currChunkCoord] = new Chunk(program->getProgram(), x, z, &coords, &coordsMutex);
+            chunks[currChunkCoord] = new Chunk(program, x, z, &coords, &coordsMutex);
         }
         chunks[currChunkCoord]->initChunk();
         chunks[currChunkCoord]->initBufferData();
@@ -76,6 +79,8 @@ namespace Craft
         {
             return false;
         }
+
+        sun.initSun();
 
         timer.resetTimer();
 
@@ -190,6 +195,9 @@ namespace Craft
             }
         }
 
+        // update sun position.
+        sun.updateSun();
+
         futures.erase(
             std::remove_if(
                 futures.begin(),
@@ -213,12 +221,16 @@ namespace Craft
             for (int z=chunkStartZ;z<chunkEndZ; z++)
             {
                 Coordinate2D<int> currChunkCoord{x, z};
-                if (chunks.find(currChunkCoord) != chunks.end()) {
-                    chunks[currChunkCoord]->drawChunk();
+                {
+                    std::lock_guard<std::mutex> lock(chunkMutex);
+                    if (chunks.find(currChunkCoord) != chunks.end()) {
+                        chunks[currChunkCoord]->drawChunk(sun.getTime());
+                    }
                 }
             }
         }
 
+        sun.drawLight((float) player.getWorldX(), (float) player.entityY, (float) player.getWorldZ());
 //        std::cout << "FPS: " << timer.getFPS() << std::endl;
 
         return true;

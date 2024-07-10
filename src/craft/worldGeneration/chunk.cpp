@@ -5,7 +5,12 @@
 #include <random>
 
 #include "chunk.hpp"
-#include "../helpers/noise.hpp"
+#include "../../helpers/noise.hpp"
+
+#ifndef M_PI
+#define M_PI           3.14159265358979323846f  /* pi */
+#endif
+
 #define CHUNK_OFFSET 0.5f
 #define CHUNK_BASE_HEIGHT 100;
 namespace Craft
@@ -13,18 +18,19 @@ namespace Craft
     Textures* Chunk::textures = nullptr;
 
     Chunk::Chunk(
-            GLuint programId,
+            Engine::Program* blockProgram,
             int x, int z,
             std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords,
             std::mutex* coordsMutex
     )
-        : programId{programId}
+        : blockProgram{blockProgram}
         , coords{coords}
         , chunkPos(x, z)
         , coordsMutex{coordsMutex}
     {};
     Chunk::~Chunk()
     {
+        blockProgram->useProgram();
         delete[] vertexBufferData;
         delete[] elementBuffer;
         for (auto block: blocks) {
@@ -315,8 +321,9 @@ namespace Craft
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
-    void Chunk::drawChunk()
+    void Chunk::drawChunk(Time gameTime)
     {
+        blockProgram->useProgram();
         if (VAO == 0 && isReadyToInitVAO)
         {
             initVAO();
@@ -326,7 +333,14 @@ namespace Craft
         }
         if (canDrawChunk) {
             glBindVertexArray(VAO);
-            setVec2(programId, "u_ChunkPos", chunkPos * 16);
+            float x = ((float) gameTime.hours * M_PI / 12) + M_PI;
+            float cosX = cos(x);
+
+            float newLightLevelEq1 = 7 * cosX + 5;
+            float newLightLevelEq2 = 4 * abs(cosX);
+
+            setFloat(blockProgram->getProgram(), "u_DefaultLightLevel", newLightLevelEq1 + newLightLevelEq2);
+            setVec2(blockProgram->getProgram(), "u_ChunkPos", chunkPos * 16);
             glDrawElements(GL_TRIANGLES, (GLint) elementCount, GL_UNSIGNED_INT, nullptr);
             glBindVertexArray(0);
         }

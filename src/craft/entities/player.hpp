@@ -27,11 +27,11 @@
 #include <bitset>
 
 #include "entity.hpp"
-#include "coordinate.hpp"
-#include "../setup/camera.hpp"
-#include "../setup/window.hpp"
-#include "../setup/program.hpp"
-#include "../helpers/timer.hpp"
+#include "../misc/coordinate.hpp"
+#include "../../setup/camera.hpp"
+#include "../../setup/window.hpp"
+#include "../../setup/program.hpp"
+#include "../../helpers/timer.hpp"
 
 namespace Craft
 {
@@ -42,6 +42,7 @@ namespace Craft
             Engine::Timer* timer,
             Engine::Window* window,
             Engine::Program* program,
+            Engine::Program* worldProgram,
             unsigned int width,
             unsigned int height,
             std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords
@@ -57,8 +58,8 @@ namespace Craft
     private:
         /// The game timer.
         Engine::Timer* timer;
-        /// The walking speed of the player. Not scientifically proven to be accurate.
-        float cameraWalkingSpeedPerMilli{0.00356f};
+        /// The walking speed of the player. Scientifically proven to be accurate.
+        float cameraWalkingSpeedPerMilli{0.004317f};
         /// The vec3 describing the View matrices up direction.
         glm::vec3 cameraUp{glm::vec3(0.0f, 1.0f,  0.0f)};
         /// A mapping of chunk coords to a block placement bitmap for collision.

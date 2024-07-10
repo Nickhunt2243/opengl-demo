@@ -17,6 +17,7 @@ namespace Craft {
             Engine::Timer* timer,
             Engine::Window* window,
             Engine::Program* program,
+            Engine::Program* worldProgram,
             unsigned int width,
             unsigned int height,
             std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords
@@ -27,14 +28,14 @@ namespace Craft {
         , Entity
                 {
                     timer,
-                    9.0l, 102.0l, 8l,
-                    Coordinate2D<int>{0, 0},
+                    4.3l, 104.0l, 14.3l,
+                    Coordinate2D<int>{1, 0},
                     PLAYER_FRONT_BOUND, PLAYER_BACK_BOUND, PLAYER_LEFT_BOUND, PLAYER_RIGHT_BOUND,
                     coords
                 }
         , camera
                 {
-                      window, program, width, height,
+                      window, program, worldProgram, width, height,
                       (float) entityX, (float) entityY, (float) entityZ
                 }
     {}
@@ -76,8 +77,8 @@ namespace Craft {
             playerDirection.x = -1;
         }
 
-        float secondsSinceLastUpdate = timer->getTimeSpan();
-        float walkingSpeed = cameraWalkingSpeedPerMilli * secondsSinceLastUpdate * 2;
+        float milliSinceLastUpdate = timer->getTimeSpan();
+        float walkingSpeed = cameraWalkingSpeedPerMilli * milliSinceLastUpdate;
         glm::vec3 movementVec{0.0f};
         // Move Forward
         if (glfwGetKey(window->getWindow(), GLFW_KEY_W) == GLFW_PRESS)
@@ -115,8 +116,25 @@ namespace Craft {
         entityX += movementVec.x;
         entityZ += movementVec.z;
         if (movementVec.x != 0 || movementVec.z != 0) {
-            Coordinate2D<long double> correction = entityCollidedWithBlock(playerDirection.x, playerDirection.z);
+            Coordinate2D<long double> correction = entityCollidedHeadOn(playerDirection.x, playerDirection.z);
+            std::cout << "Player: " << Coordinate2D<long double>{entityX, entityZ} << std::endl;
+            std::cout << "Collision: " << correction << std::endl;
 
+            if (correction.x == 0 && correction.z == 0)
+            {
+                correction = entityCollidedAtCorner(playerDirection.x, playerDirection.z);
+                bool movingX = playerDirection.x != 0;
+                float xMag = abs(movementVec.x);
+                float zMag = abs(movementVec.z);
+                bool walkingMoreXDir = xMag > zMag;
+                // If we are going forward then
+                if (!movingX && walkingMoreXDir || movingX && !walkingMoreXDir)
+                {
+                    long double tmp = correction.x;
+                    correction.x = correction.z;
+                    correction.z = tmp;
+                }
+            }
             if (correction.x != 0)
             {
                 entityX += correction.x;
@@ -136,7 +154,7 @@ namespace Craft {
             // Start jumping
             if (vertMovement == EntityVertMovementType::FLYING)
             {
-                cameraPos.y += 0.01f * secondsSinceLastUpdate;
+                cameraPos.y += 0.01f * milliSinceLastUpdate;
                 entityY = cameraPos.y;
             }
             else if (vertMovement == EntityVertMovementType::STATIONARY)
@@ -154,7 +172,7 @@ namespace Craft {
             }
             else
             {
-                cameraPos.y += -0.01f * secondsSinceLastUpdate;
+                cameraPos.y += -0.01f * milliSinceLastUpdate;
                 entityY = cameraPos.y;
             }
         }

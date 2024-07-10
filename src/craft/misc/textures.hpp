@@ -10,10 +10,10 @@
 #include <filesystem>
 #include <fstream>
 #include <thread>
-#include <nlohmann/json.hpp>
+#include "nlohmann/json.hpp"
 using json = nlohmann::json;
 #include "types.hpp"
-#include "../helpers/helpers.hpp"
+#include "../../helpers/helpers.hpp"
 
 namespace Craft
 {

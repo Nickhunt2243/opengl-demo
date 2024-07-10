@@ -5,7 +5,6 @@
 #ifndef OPENGLDEMO_BLOCK_HPP
 #define OPENGLDEMO_BLOCK_HPP
 
-#define CUBE_DELTA 0.5f
 #ifndef CHUNK_WIDTH
 #define CHUNK_WIDTH 16
 #endif
@@ -19,8 +18,8 @@
 #include <mutex>
 #include <bitset>
 
-#include "coordinate.hpp"
-#include "types.hpp"
+#include "../misc/coordinate.hpp"
+#include "../misc/types.hpp"
 
 namespace Craft
 {
@@ -33,8 +32,9 @@ namespace Craft
             : chunkRelativeCoord{coord}
             , textures{textures}
             , type{type}
+            , lightLevelDiff{0}
         {}
-//        /// The position of the chunk the coord is in.
+        /// The position of the chunk the coord is in.
         Coordinate chunkRelativeCoord;
         /// The information of the blocks neighbors.
         NeighborsInfo neighborInfo{};
@@ -42,6 +42,8 @@ namespace Craft
         BlockType type{};
         /// The information for the blocks textures and color mapping.
         blockTexture textures{};
+        /// The amount to decrease the light level by (not currently in use).
+        int lightLevelDiff;
     };
     /**
      * A function for determining if a block is next to another block.

@@ -7,10 +7,11 @@
 
 #include <unordered_set>
 
-#include "../helpers/timer.hpp"
-#include "player.hpp"
+#include "../../helpers/timer.hpp"
+#include "../entities/player.hpp"
 #include "chunk.hpp"
-#include "../setup/program.hpp"
+#include "../../setup/program.hpp"
+#include "../weather/sun.hpp"
 
 namespace Craft
 {
@@ -20,6 +21,7 @@ namespace Craft
         World(
             Engine::Window* window,
             Engine::Program* program,
+            Engine::Program* worldProgram,
             unsigned int width,
             unsigned int height
         );
@@ -47,8 +49,10 @@ namespace Craft
     private:
         /// The game timer.
         Engine::Timer timer;
-        /// A pointer to the OpenGL program.
+        /// A program for drawing blocks.
         Engine::Program* program;
+        /// Generic program for drawing world objects.
+        Engine::Program* worldProgram;
         /// The camera object of the application.
         Player player;
         /// The mapping of 2D coordinates to Chunk*
@@ -77,6 +81,8 @@ namespace Craft
         std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*> coords{};
         /// The mutex for only allowing us to create one set of chunks at a time.
         std::mutex initOneSideChunksMutex{};
+        /// The sun object for handling the in-game time.
+        Sun sun;
         /**
          * A helper function for initializing a chunk.
          *

@@ -4,10 +4,10 @@
 #include "window.hpp"
 #include "program.hpp"
 #include "camera.hpp"
-#include "../craft/player.hpp"
-#include "../craft/chunk.hpp"
-#include "../craft/textures.hpp"
-#include "../craft/world.hpp"
+#include "../craft/entities/player.hpp"
+#include "../craft/worldGeneration/chunk.hpp"
+#include "../craft/misc/textures.hpp"
+#include "../craft/worldGeneration/world.hpp"
 
 namespace Engine
 {
@@ -31,8 +31,10 @@ namespace Engine
     private:
         /// The Window object of the application.
         Window window;
-        /// The Program object of the application
-        Program program;
+        /// The Program for blocks within the application
+        Program* program;
+        /// The program for generic models within the application.
+        Program* worldProgram;
         /// The player world.
         Craft::World* world;
     };
