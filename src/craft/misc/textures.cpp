@@ -118,7 +118,7 @@ namespace Craft
         glUseProgram(program);
         GLuint tex = initTextureFromData(loadResults);
         std::cout << "Initialized Textures" << std::endl;
-        glUniform1i(glGetUniformLocation(program, "textures"), 0);
+        glUniform1i(glGetUniformLocation(program, "textures"), 1);
         // Clearing threads.
         threads.clear();
         /// Iterate through Textures
@@ -158,7 +158,7 @@ namespace Craft
             return 0;
         }
 
-        glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE1);
         GLuint textureArray;
         glGenTextures(1, &textureArray);
         glBindTexture(GL_TEXTURE_2D_ARRAY, textureArray);

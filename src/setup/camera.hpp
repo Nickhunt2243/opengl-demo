@@ -75,7 +75,7 @@ namespace Engine
         unsigned int windowWidth,
                      windowHeight;
         /// The 3x1 vector describing the cameras front direction.
-        glm::vec3 cameraFront{glm::vec3(1.0f, 0.0f, 0.0f)};
+        glm::vec3 cameraFront{glm::vec3(-1.0f, -0.35f, 0.0f)};
         /// The 4x4 matrix describing the View transformation.
         glm::mat4 view{};//{glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp)};
         /// A Boolean that acts as a buffer for initial calls to mouse_movement_callback.

@@ -40,6 +40,10 @@ namespace Engine
          * @return true if successful else false.
          */
         bool initWindow();
+
+        [[nodiscard]] inline int getWidth() const {return width;}
+        [[nodiscard]] inline int getHeight() const {return height;}
+
     private:
         /**
          * Initialize GLAD, the OpenGL wrapper for this project.

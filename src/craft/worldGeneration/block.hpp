@@ -28,14 +28,14 @@ namespace Craft
      */
     struct Block
     {
-        Block(const Coordinate& coord, blockTexture textures, BlockType type)
+        Block(const Coordinate<int>& coord, blockTexture textures, BlockType type)
             : chunkRelativeCoord{coord}
             , textures{textures}
             , type{type}
             , lightLevelDiff{0}
         {}
         /// The position of the chunk the coord is in.
-        Coordinate chunkRelativeCoord;
+        Coordinate<int> chunkRelativeCoord;
         /// The information of the blocks neighbors.
         NeighborsInfo neighborInfo{};
         /// The enum of the block's type.

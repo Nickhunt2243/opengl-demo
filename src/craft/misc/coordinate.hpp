@@ -11,25 +11,48 @@
 
 namespace Craft
 {
-    /// A struct containing coordinate information for a given block.
-    struct Coordinate
-    {
-        Coordinate(
-                float x, float y, float z
-            ) : x{x}, y{y}, z{z}
-        {}
-        /// The x position of the object.
-        float x;
-        /// The y position of the object.
-        float y;
-        /// The z position of the object.
-        float z;
-    };
     /// An typename for Coordinate2D to ensure it only holds numerical types.
     template<typename T>
     using is_numeric = std::integral_constant<bool,
             std::is_integral<T>::value ||
             std::is_floating_point<T>::value>;
+
+    /// A struct containing coordinate information for a given block.
+    template<typename T, typename = std::enable_if_t<is_numeric<T>::value>>
+    struct Coordinate
+    {
+        Coordinate(
+                T x, T y, T z
+            ) : x{x}, y{y}, z{z}
+        {}
+        /// The x position of the object.
+        T x;
+        /// The y position of the object.
+        T y;
+        /// The z position of the object.
+        T z;
+
+
+        /**
+         * A glm::vec2 cast function for ease of sending data to openGL.
+         *
+         * @return: A glm::vec2 representing the 2D coordinate.
+         */
+        operator glm::vec3() const {
+            return {x, y, z};
+        }
+        /**
+         * The << operator for a 2D coordinate. Used for debugging purposes.
+         *
+         * @param os:    The stream to to be inserted into.
+         * @param coord: The coordinate to input into the stream.
+         * @return:      The stream with the updated coordinate string.
+         */
+        friend std::ostream& operator <<(std::ostream& os, const Coordinate<T>& coord)
+        {
+            return os << "Coord(X: " << coord.x  << ", Y: " << coord.y << ", Z: " << coord.z << ");";
+        }
+    };
 
     /// A struct containing coordinate information for a given x and z position.
     /// I chose X and Z since I mostly use this struct for x and z coordinates within the world.
@@ -130,25 +153,25 @@ namespace std
     /**
      * A function for determining the hash of a Coordinate pointer.
      */
-    template<>
-    struct hash<Craft::Coordinate*>
+    template<typename T>
+    struct hash<Craft::Coordinate<T>*>
     {
-        size_t operator()(const Craft::Coordinate* coord) const
+        size_t operator()(const Craft::Coordinate<T>* coord) const
         {
             if (coord == nullptr) return 0;
-            size_t hx = hash<float>()(coord->x);
-            size_t hy = hash<float>()(coord->y);
-            size_t hz = hash<float>()(coord->z);
+            size_t hx = hash<T>()(coord->x);
+            size_t hy = hash<T>()(coord->y);
+            size_t hz = hash<T>()(coord->z);
             return hx ^ (hy << 1) ^ (hz << 2); // Combine the hashes
         }
     };
     /**
      * A function for determining equality of coordinate pointers.
      */
-    template<>
-    struct equal_to<Craft::Coordinate*>
+    template<typename T>
+    struct equal_to<Craft::Coordinate<T>*>
     {
-        bool operator()(const Craft::Coordinate* lhs, const Craft::Coordinate* rhs) const
+        bool operator()(const Craft::Coordinate<T>* lhs, const Craft::Coordinate<T>* rhs) const
         {
             if (lhs == nullptr || rhs == nullptr) return lhs == rhs;
             return lhs->x == rhs->x &&

@@ -77,7 +77,7 @@ namespace Craft
          *
          * NOTE: Will eventually change as stairs and other blocks will have decimal solid surfaces.
          */
-        int initialJumpHeight{-1};
+        float initialJumpHeight{-1};
         /// The initial fall height of the player. Used for falling with a displacement.
         long double initialFallHeight{-1};
         /// A mapping of chunk coords to a block placement bitmap for collision.
@@ -97,11 +97,12 @@ namespace Craft
         /**
          * Retrieve a given block's X, Z, and chunk coordinate normalized in 0-15 indexing.
          *
-         * @param blockX: The current block X value.
-         * @param blockZ: The current block Z value.
+         * @param blockX:   The current block X value.
+         * @param blockZ:   The current block Z value.
+         * @param chunkPos: The current chunk position.
          * @return:       A struct containing the blocks x, z, and chunk coordinate.
          */
-        blockInfo getBlockInfo(int blockX, int blockZ);
+        blockInfo getBlockInfo(int blockX, int blockZ, Coordinate2D<int> chunkPos);
         /**
          * A method to handle x/z head on collision.
          *

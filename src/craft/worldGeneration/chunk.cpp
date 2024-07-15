@@ -78,7 +78,7 @@ namespace Craft
                 for (int yIdx=0; yIdx<yHeightFinal; yIdx++)
                 {
                     bitsetIdx = (yIdx * CHUNK_WIDTH * CHUNK_WIDTH) + (zIdx * CHUNK_WIDTH) + xIdx;
-                    Coordinate coord{(float) xIdx, (float) yIdx, (float) zIdx};
+                    Coordinate<int> coord{xIdx, yIdx, zIdx};
                     blockTexture texture = textures->getTexture(blockType);
                     auto newBlock = new Block(coord, texture, blockType);
                     {

@@ -2,7 +2,7 @@
 #define CHUNK_WIDTH 16
 #endif
 
-#define VISIBLE_CHUNKS 21                       // must be odd.
+#define VISIBLE_CHUNKS 5                       // must be odd.
 #define MAX_STORED_CHUNKS (VISIBLE_CHUNKS + 3) // must be odd.
 #define CHUNK_BOUNDS ((VISIBLE_CHUNKS - 1) / 2)
 
@@ -21,7 +21,7 @@ namespace Craft
         , program{program}
         , worldProgram{worldProgram}
         , timer()
-        , player{&timer, window, program, worldProgram, width, height, &coords}
+        , player{&timer, window, program, worldProgram, width, height, &coords, &coordsMutex}
         , sun{worldProgram}
     {
         updateChunkBounds();
@@ -215,6 +215,8 @@ namespace Craft
 
     bool World::drawWorld()
     {
+
+//        glActiveTexture(GL_TEXTURE0);
         timer.incFrames();
         for (int x=chunkStartX;x<chunkEndX; x++)
         {

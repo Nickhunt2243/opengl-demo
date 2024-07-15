@@ -1,4 +1,4 @@
-#define PLAYER_EYE_DIFF 0.38f
+
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -12,8 +12,8 @@ namespace Engine
     bool Camera::firstMouse = true;
     float Camera::lastX = 0.0f;
     float Camera::lastY = 0.0f;
-    float Camera::yaw = 0.0f;
-    float Camera::pitch = 0.0f;
+    float Camera::yaw = 180.0f;
+    float Camera::pitch = -20.0f;
 
     Camera::Camera(
             Window* window,
@@ -55,7 +55,7 @@ namespace Engine
 
     bool Camera::updateCamera(glm::vec3 cameraPos, glm::vec3 cameraUp)
     {
-        cameraPos.y -= PLAYER_EYE_DIFF;
+
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         program->useProgram();
         if (!setMat4(program->getProgram(), "u_viewT", view)) {

@@ -100,8 +100,6 @@ namespace Engine
             return false;
         }
         glUseProgram(program);
-        // Enable 3D Texturing
-        glEnable(GL_TEXTURE_2D_ARRAY);
         // Enable Depth testing
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);

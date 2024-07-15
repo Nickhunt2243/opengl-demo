@@ -19,7 +19,7 @@ vec2 a_uv = vec2(
 );
 // 3 bits of normal data
 int normalType = (blockData >> 23) & 7; // 3 bits
-int lightScalar = (blockData >> 26) & 15; // 3 bits
+int lightScalar = (blockData >> 26) & 15; // 4 bits
 
 
 vec4 a_colorMap = vec4(
@@ -37,7 +37,8 @@ uniform float u_DefaultLightLevel;
 out vec2 texCoords;
 out int currTex;
 out flat vec4 colorMap;
-out vec2 a_blockPos;
+out vec3 a_blockPos;
+out vec2 a_chunkPos;
 out flat vec3 a_norm;
 out flat float a_colorScalar;
 
@@ -57,12 +58,13 @@ vec3[] normals = {
     {-1.0, 0.0, 0.0}
 };
 
-//vec3 a_norm = normals[normalType];
 
 void main()
 {
+
     gl_Position = u_projT * u_viewT * newPos;
-    a_blockPos = vec2(x, z);
+    a_chunkPos = vec2(x, z);
+    a_blockPos = newPos.xyz;
     float lightLevel = clamp(u_DefaultLightLevel - lightScalar, 0, 15);
     a_colorScalar = (0.6 * lightLevel / 15) + 0.4;
     texCoords = a_uv;

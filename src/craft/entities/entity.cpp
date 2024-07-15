@@ -9,7 +9,9 @@
 #define PLAYER_BOUND_SQRD (PLAYER_BOUND * PLAYER_BOUND)
 #define EPSILON 1e-4
 #define VERTICAL_TOLERANCE 1e-1
+#ifndef MAX_BLOCKS
 #define MAX_BLOCKS (CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT)
+#endif
 namespace Craft
 {
     Entity::Entity(
@@ -28,14 +30,14 @@ namespace Craft
             , originChunk{chunkPos.x, chunkPos.z}
     {}
 
-    blockInfo Entity::getBlockInfo(int blockX, int blockZ)
+    blockInfo Entity::getBlockInfo(int blockX, int blockZ, Coordinate2D<int> chunkPos)
     {
         blockInfo info
-                {
-                        blockX,
-                        blockZ,
-                        originChunk
-                };
+        {
+            blockX,
+            blockZ,
+            chunkPos
+        };
         if (blockZ < 0)
         {
             info.blockZ += 16;
@@ -91,7 +93,7 @@ namespace Craft
         {
             for (Coordinate2D<int> coord: blocksToCheck)
             {
-                blockInfo info = getBlockInfo(coord.x, coord.z);
+                blockInfo info = getBlockInfo(coord.x, coord.z, originChunk);
                 int blockIdx = (blockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
                 if (blockIdx < CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT && blockIdx >= 0 && (*coords->at(info.chunk))[blockIdx])
                 {
@@ -120,7 +122,7 @@ namespace Craft
                         }
                 };
         for (Coordinate2D<int> coord: blocksToCheck) {
-            blockInfo info = getBlockInfo(coord.x, coord.z);
+            blockInfo info = getBlockInfo(coord.x, coord.z, originChunk);
             int blockIdx = (blockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
             if (blockIdx < CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT && blockIdx >= 0 && (*coords->at(info.chunk))[blockIdx])
             {
@@ -244,7 +246,7 @@ namespace Craft
         int topBlockY = (int) round(entityY) - 1;
         int bottomBlockY = topBlockY - 1;
 
-        blockInfo info = getBlockInfo(closestVertexX, closestVertexZ);
+        blockInfo info = getBlockInfo(closestVertexX, closestVertexZ, originChunk);
         // Blocks coordinates in world coordinates.
         long double blockChunkWorldX = (info.chunk.x * 16) + info.blockX;
         long double blockChunkWorldZ = (info.chunk.z * 16) + info.blockZ;
@@ -306,7 +308,7 @@ namespace Craft
         int bottomBlockIdx;
         for (Coordinate2D<int> block: blocksToCheck) {
             // Checking the blockToChecks vertex to see if it is within the players bounds.
-            info = getBlockInfo(block.x, block.z);
+            info = getBlockInfo(block.x, block.z, originChunk);
 
             topBlockIdx = (topBlockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
             bottomBlockIdx = (bottomBlockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
@@ -362,7 +364,7 @@ namespace Craft
         int bottomBlockY = topBlockY - 1;
 
         // Checking the blockToChecks vertex to see if it is within the players bounds.
-        blockInfo info = getBlockInfo(vertexXToCheck, vertexZToCheck);
+        blockInfo info = getBlockInfo(vertexXToCheck, vertexZToCheck, originChunk);
         long double blockChunkWorldX = (info.chunk.x * 16) + info.blockX;
         long double blockChunkWorldZ = (info.chunk.z * 16) + info.blockZ;
         bool checkingFront = isCheckingFront(xDirection, zDirection, (int) blockChunkWorldX, (int) blockChunkWorldZ, getWorldX(), getWorldZ());
@@ -374,39 +376,25 @@ namespace Craft
         int blockXToCheck = vertexXToCheck;
         int blockZToCheck = vertexZToCheck;
 
-        if (checkingLeft && xDirection == 1)
+        if (
+                (checkingLeft && xDirection == 1) ||
+                (!checkingLeft && xDirection == -1) ||
+                (!checkingFront && zDirection == 1) ||
+                (checkingFront && zDirection == -1)
+            )
         {
             blockZToCheck -= 1;
         }
-        if (!checkingFront && xDirection == 1)
+        if (
+                (!checkingFront && xDirection == 1) ||
+                (checkingFront && xDirection == -1) ||
+                (!checkingLeft && zDirection == 1) ||
+                (checkingLeft && zDirection == -1)
+            )
         {
             blockXToCheck -= 1;
         }
-        if (!checkingLeft && xDirection == -1) {
-            blockZToCheck -= 1;
-        }
-        if (checkingFront && xDirection == -1)
-        {
-            blockXToCheck -= 1;
-        }
-
-        if (!checkingLeft && zDirection == 1)
-        {
-            blockXToCheck -= 1;
-        }
-        if (!checkingFront && zDirection == 1)
-        {
-            blockZToCheck -= 1;
-        }
-        if (checkingLeft && zDirection == -1)
-        {
-            blockXToCheck -= 1;
-        }
-        if (checkingFront && zDirection == -1)
-        {
-            blockZToCheck -= 1;
-        }
-        info = getBlockInfo(blockXToCheck, blockZToCheck);
+        info = getBlockInfo(blockXToCheck, blockZToCheck, originChunk);
         int topBlockIdx = (topBlockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
         int bottomBlockIdx = (bottomBlockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
         if (
