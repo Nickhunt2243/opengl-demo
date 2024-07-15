@@ -45,7 +45,26 @@ namespace Engine
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-        window = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
+        // Get the primary monitor
+        GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+        if (!primaryMonitor) {
+            std::cerr << "Failed to get the primary monitor" << std::endl;
+            glfwTerminate();
+            return -1;
+        }
+
+        // Get the video mode of the primary monitor
+        const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
+        if (!videoMode) {
+            std::cerr << "Failed to get the video mode of the primary monitor" << std::endl;
+            glfwTerminate();
+            return -1;
+        }
+        width = videoMode->width;
+        height = videoMode->height;
+
+
+        window = glfwCreateWindow(videoMode->width, videoMode->height,  name.c_str(), nullptr, nullptr);
         if (window == nullptr)
         {
             std::cerr << "Failed to create GLFW window" << std::endl;

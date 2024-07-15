@@ -1,7 +1,3 @@
-//
-// Created by admin on 7/3/2024.
-//
-
 #include "sun.hpp"
 
 #include "glm/ext/matrix_transform.hpp"
@@ -140,13 +136,13 @@ namespace Craft {
         {
             updateModel(playerX, playerY, playerZ, sunAngle);
             setVec4(worldProgram->getProgram(), "u_colorMapping", sunColor);
-            glDrawArrays(GL_TRIANGLES, 0, (GLint) solarObjectVertices.size());
+            glDrawArrays(GL_TRIANGLES, 0, (GLint) solarObjectVertices.size() / 3);
         }
         if (drawMoon)
         {
             updateModel(playerX, playerY, playerZ, moonAngle);
             setVec4(worldProgram->getProgram(), "u_colorMapping", moonColor);
-            glDrawArrays(GL_TRIANGLES, 0, (GLint) solarObjectVertices.size());
+            glDrawArrays(GL_TRIANGLES, 0, (GLint) solarObjectVertices.size() / 3);
         }
         glBindVertexArray(0);
     }

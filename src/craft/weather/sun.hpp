@@ -1,7 +1,3 @@
-//
-// Created by admin on 7/3/2024.
-//
-
 #ifndef OPENGLDEMO_SUN_HPP
 #define OPENGLDEMO_SUN_HPP
 
@@ -10,7 +6,7 @@
 #endif
 #define SUN_DISTANCE 384 // Allows 48 Chunks without overlap but will
 #define SUN_WIDTH 50
-#define TIME_CONVERSION (1.0f / 1.38f) /* Each 1s in Minecraft is 13.8 ms in real time. */
+#define TIME_CONVERSION (1.0f / 13.8f) /* Each 1s in Minecraft is 13.8 ms in real time. */
 
 #include "glad/glad.h"
 #include "glm/glm.hpp"

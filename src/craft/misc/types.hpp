@@ -95,6 +95,17 @@ namespace Craft
         STONE
     };
 
+    enum class BlockSideType {
+        X_MAX,
+        X_MIN,
+        Y_MAX,
+        Y_MIN,
+        Z_MAX,
+        Z_MIN,
+        // For not looking at blocks
+        NONE
+    };
+
     /**
      * The << operator for the enum class BlockType for troubleshooting.
      *

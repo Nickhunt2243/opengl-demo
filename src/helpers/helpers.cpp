@@ -91,6 +91,11 @@ void setVec2(GLuint program, const std::string &name, glm::vec2 value)
     GLint loc = getLoc(program, name);
     glUniform2fv(loc, 1, glm::value_ptr(value));
 }
+void setVec3(GLuint program, const std::string &name, glm::vec3 value)
+{
+    GLint loc = getLoc(program, name);
+    glUniform3fv(loc, 1, glm::value_ptr(value));
+}
 void setVec4(GLuint program, const std::string &name, glm::vec4 value)
 {
     GLint loc = getLoc(program, name);
