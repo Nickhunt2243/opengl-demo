@@ -10,7 +10,7 @@ namespace Craft
     /*  World Information Globals  */
     const int CHUNK_WIDTH = 16;
     const int CHUNK_HEIGHT = 256;
-    const int VISIBLE_CHUNKS = 13;
+    const int VISIBLE_CHUNKS = 5;
     const int CHUNK_BASE_HEIGHT = 100;
     const float CHUNK_OFFSET = 0.5f;
 
