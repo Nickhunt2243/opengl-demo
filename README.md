@@ -7,8 +7,8 @@ Welcome to the OpenGL Demo project! This project is a learning exercise inspired
 #### Aerial view with simple borders for better perspective.
 ![areal_shot](external_assets/progress_images/aerial_shot_terrain.png)
 
-#### Video of ground view w/ collision.
-[Minecraft_Clone_Collision.mp4](external_assets/progress_images/Minecraft_Clone_Collision.mp4)
+#### Most recent demo:
+[Minecraft_Clone_placing_blocks.mp4](external_assets/progress_images/Minecraft_Clone_placing_blocks.mp4)
 ## Getting Started
 
 ### Prerequisites
