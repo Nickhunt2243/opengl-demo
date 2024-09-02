@@ -62,6 +62,14 @@ namespace Engine
             return false;
         }
 
+        // Compute camera normal based on X and Z axis
+        program->useProgram();
+        glm::vec3 normFront = glm::normalize(glm::vec3(cameraFront.x, 0, cameraFront.z));
+        bool lookingX = abs(normFront.x) > abs(normFront.z);
+        int scalar = lookingX ? (normFront.x < 0 ? -1 : 1) : (normFront.z < 0 ? -1 : 1);
+        glm::vec3 cameraNormal = glm::vec3{(lookingX ? scalar : 0), 0, (!lookingX ? scalar : 0)};
+        setVec3(program->getProgram(), "u_CameraNorm", cameraNormal);
+
         worldProgram->useProgram();
         if (!setMat4(worldProgram->getProgram(), "u_viewT", view)) {
             return false;

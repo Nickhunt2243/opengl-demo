@@ -113,6 +113,7 @@ void setiVec2(GLuint program, const std::string &name, glm::vec2 value)
 }
 void setVec3(GLuint program, const std::string &name, glm::vec3 value)
 {
+    glUseProgram(program);
     GLint loc = getLoc(program, name);
     glUniform3fv(loc, 1, glm::value_ptr(value));
 }

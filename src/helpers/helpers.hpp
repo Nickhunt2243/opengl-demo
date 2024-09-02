@@ -152,9 +152,6 @@ bool setMat4(GLuint program, const std::string &name, glm::mat4& value);
 Craft::BlockInfo getBlockInfo(Craft::Coordinate<int> block, Craft::Coordinate2D<int> chunkPos);
 /// Helper function for checking opengl errors.
 inline void checkOpenGLError(const std::string& location) {
-    GLenum error;
-    while ((error = glGetError()) != GL_NO_ERROR) {
-        std::cerr << "OpenGL Error " << error << " at " << location << std::endl;
-    }
+    std::cerr << "OpenGL Error " << glGetError() << " at " << location << std::endl;
 }
 #endif //OPENGLDEMO_HELPERS_HPP

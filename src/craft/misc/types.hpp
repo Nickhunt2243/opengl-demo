@@ -63,10 +63,10 @@ namespace Craft
      * Used to aid in the reading and writing to neighbor information.
      */
     struct ByteProxy {
-        unsigned char& byte;
+        int& byte;
         int bitIndex;
 
-        ByteProxy(unsigned char& byte, int bitIndex)
+        ByteProxy(int& byte, int bitIndex)
                 : byte(byte), bitIndex(bitIndex) {}
 
         // Getter
@@ -82,26 +82,23 @@ namespace Craft
                 byte &= ~(1 << bitIndex);
             return *this;
         }
-    };
-    /// A struct containing information on a block's neighbors.
-    struct NeighborsInfo {
-        /**
-         * Bits are layed out as such:
-         * 0 -> blockExists: Boolean of whether the block exists.
-         * 1 -> y_max:       Boolean of whether we will draw the +1 Y side of the block.
-         * 2 -> y_min:       Boolean of whether we will draw the -1 Y side of the block.
-         * 3 -> x_max:       Boolean of whether we will draw the +1 X side of the block.
-         * 4 -> x_min:       Boolean of whether we will draw the -1 X side of the block.
-         * 5 -> z_max:       Boolean of whether we will draw the +1 Z side of the block.
-         * 6 -> z_min:       Boolean of whether we will draw the -1 Z side of the block.
-         *
-         */
-        unsigned char data;
+    }
+    /**
+     * A struct for holding an entire rows (16 blocks/bytes) neighbor information.
+     *
+     * position 0 holds blocks 0-3
+     * position 1 holds blocks 4-7
+     * ...
+     *
+     */
+    struct NeighborInfo
+    {
+        int data;
 
-        NeighborsInfo() : data{0} {}
-        NeighborsInfo(unsigned char data) : data{data} {}
-
-        // Accessor methods using ByteProxy
+        void setNeighbor(int value)
+        {
+            data = (int) value;
+        }
         ByteProxy block() { return {data, 0}; }
         bool blockExists() const {return (data & 1) == 1; }
         ByteProxy y_max() { return {data, 1}; }
@@ -119,35 +116,7 @@ namespace Craft
                    ((data >> 3) & 1) + ((data >> 4) & 1) +
                    ((data >> 5) & 1) + ((data >> 6) & 1);
         }
-    };
-    /**
-     * A struct for holding an entire rows (16 blocks/bytes) neighbor information.
-     *
-     * position 0 holds blocks 0-3
-     * position 1 holds blocks 4-7
-     * ...
-     *
-     */
-    struct RowNeighborInfo
-    {
-        glm::ivec4 rowNeighborInfo;
 
-        void setNeighbor(int index, NeighborsInfo value)
-        {
-            int newValue = ((int) value.data << (8 * (3 - (index % 4))));
-            int clearMask = ~(0xFF << (8 * (3 - (index % 4))));
-            rowNeighborInfo[index / 4] &= clearMask;
-            rowNeighborInfo[index / 4] |= newValue;
-        }
-
-        NeighborsInfo operator [](int index)
-        {
-            int elementIndex = index / 4;
-            int byteOffset = 3 - (index % 4);
-
-            int ele = rowNeighborInfo[elementIndex];
-            return (NeighborsInfo) (ele >> (8 * (byteOffset)) & 255);
-        }
     };
     /**
      * A struct for holding the neighbor info for an entire chunk.
@@ -161,7 +130,7 @@ namespace Craft
      */
     struct ChunkInfoSSBO
     {
-        RowNeighborInfo blockVisibility[CHUNK_WIDTH * CHUNK_HEIGHT];
+        NeighborInfo blockVisibility[CHUNK_WIDTH * CHUNK_HEIGHT * 16];
     };
     /**
      * A enum class of types of block's.

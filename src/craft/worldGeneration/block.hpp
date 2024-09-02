@@ -61,7 +61,7 @@ namespace Craft
      */
     void fillElementBufferData(
         uint32_t* ePointer, int eIdx,
-        int currIndex, NeighborsInfo neighborInfo
+        int currIndex, NeighborInfo neighborInfo
     );
     /// Retrieve the number of Vertices per Cube: 10 floats per vertex * 4 per side * 6 sides.
     int getVerticesCount();

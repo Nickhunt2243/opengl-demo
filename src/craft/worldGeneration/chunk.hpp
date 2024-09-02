@@ -30,7 +30,7 @@ namespace Craft
         );
         ~Chunk();
         /// Initialize a Chunk found at the x, z coordinates.
-        void initChunk(RowNeighborInfo* visibility);
+        void initChunk(NeighborInfo* visibility);
         /**
          * A function to draw the chunk using OpenGL.
          *
@@ -46,7 +46,7 @@ namespace Craft
         /// A static textures object.
         static Textures* textures;
         /// Initialize the Element Buffer array.
-        void initElementBuffer(RowNeighborInfo* visibility);
+        void initElementBuffer(NeighborInfo* visibility);
         /// A bitset for every block in the chunk. Set to true if a block occupies that space, otherwise false.
         std::unordered_map<Coordinate<int>, Block> blockCoords{0};
         /**
@@ -55,20 +55,26 @@ namespace Craft
          * @param blockPos:   The position at which to create a block.
          * @param visibility: The neighbor information for the given chunk.
          */
-        void createBlock(Coordinate<int> blockPos, RowNeighborInfo* visibility);
+        void createBlock(Coordinate<int> blockPos, NeighborInfo* visibility);
         /**
          * Delete a block at the given position.
          *
          * @param blockPos:   The position at which to delete the block.
          * @param visibility: The neighbor information for the given chunk.
          */
-        void deleteBlock(Coordinate<int> blockPos, RowNeighborInfo* visibility);
+        void deleteBlock(Coordinate<int> blockPos, NeighborInfo* visibility);
+        /**
+         * Initializes the SSBO with which blocks exist within the chunk.
+         *
+         * @param visibility: The pointer to the SSBO position of the given chunk.
+         */
+        void initVisibility(NeighborInfo* visibility);
     private:
         /// The Vertex Array Object of the OpenGL program.
         GLuint VAO{0},
         /// The Vertex Buffer Object of the OpenGL program.
                VBO{0},
-        /// The Element Buffer Object of the OpenGL program;
+        /// The Element Buffer Object of the OpenGL program.
                EBO{0};
         /// A Boolean of whether we are ready to initialize the VAO
         bool isReadyToInitVAO{false};

@@ -104,7 +104,7 @@ namespace Craft
     void fillElementBufferData(
             uint32_t* ePointer, int eIdx,
             int currIndex,
-            NeighborsInfo neighborInfo
+            NeighborInfo neighborInfo
         )
     {
         if (neighborInfo.y_max() == 1)

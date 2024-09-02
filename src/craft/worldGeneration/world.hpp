@@ -78,6 +78,7 @@ namespace Craft
                 ChunkInfoSSBO* chunkInfoSSBO,
                 bool drawBlock
         );
+        ChunkInfoSSBO* chunkSSBOPointer{nullptr};
     private:
         /// The game timer.
         Engine::Timer timer;
@@ -96,6 +97,10 @@ namespace Craft
         /// A mutex for access the coords set.
         std::mutex coordsMutex{};
         std::mutex glMutex{};
+        /// Boolean that denotes when we need to update neighbor information
+        bool needsToUpdateNeighbors{false};
+        /// The chunks that we need to update neighbor information for.
+        std::vector<Coordinate2D<int>> chunksAdded;
         /// The X coordinate of the first chunk to render (inclusive).
         int chunkStartX;
         /// The Z coordinate of the first chunk to render (inclusive).
@@ -118,7 +123,7 @@ namespace Craft
          * @param x: The x coordinate of the chunks center.
          * @param z: The z coordinate of the chunks center.
          */
-        void initChunk(int x, int z, RowNeighborInfo* visibility);
+        void initChunk(int x, int z, NeighborInfo* visibility);
         /// Calculate the new bounds of the chunks to render.
         void updateChunkBounds();
         /**
@@ -128,7 +133,7 @@ namespace Craft
          *
          * @param chunksAdded: The chunks to be updated.
          */
-        void calcNeighborInfo(const std::vector<Coordinate2D<int>>& chunksAdded);
+        void calcNeighborInfo();
         /**
          * Update the chunks when a player moves to another chunk.
          *

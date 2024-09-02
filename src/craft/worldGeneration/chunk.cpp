@@ -41,7 +41,7 @@ namespace Craft
         }
     }
 
-    void Chunk::initChunk(RowNeighborInfo* visibility) {
+    void Chunk::initChunk(NeighborInfo* visibility) {
         BlockType blockType = BlockType::GRASS;
 
         std::mt19937 gen(44); // Mersenne Twister generator
@@ -97,16 +97,14 @@ namespace Craft
             for (int zIdx=0; zIdx<CHUNK_WIDTH; zIdx++)
             {
                 baseCoord.z = zIdx;
-                offsetIdx = zIdx;
                 yHeightFinal = yHeights[idx];
                 for (int yIdx=0; yIdx<yHeightFinal; yIdx++)
                 {
-                    // RGB value for a block being there is <255, 0, 0> leaving room for more details in the future.
-                    visibility[offsetIdx].setNeighbor(xIdx, 1);
+                    offsetIdx = (yIdx * CHUNK_SIZE) + (zIdx * CHUNK_WIDTH) + xIdx;
+                    visibility[offsetIdx].setNeighbor(1);
                     baseCoord.y = yIdx;
                     blockType = yIdx < yHeightFinal - 3 ? BlockType::STONE : BlockType::GRASS;
                     blocksMap.emplace(baseCoord, Block(blockType));
-                    offsetIdx += CHUNK_WIDTH;
                 }
                 idx += CHUNK_WIDTH;
             }
@@ -116,8 +114,17 @@ namespace Craft
             coords->insert({chunkPos, &blocksMap});
         }
     }
+    void Chunk::initVisibility(NeighborInfo* visibility)
+    {
+        int idx = 0;
+        for (auto blockInfo: blocksMap)
+        {
+            idx = (blockInfo.first.y * CHUNK_SIZE) + (blockInfo.first.z * CHUNK_WIDTH) + (blockInfo.first.x);
+            visibility[idx].data = 1;
+        }
+    }
 
-    void Chunk::deleteBlock(Coordinate<int> blockPos, RowNeighborInfo* visibility)
+    void Chunk::deleteBlock(Coordinate<int> blockPos, NeighborInfo* visibility)
     {
         // Delete the block from the blocksMap hashmap
         if (blocksMap.find(blockPos) == blocksMap.end())
@@ -126,11 +133,11 @@ namespace Craft
         }
         blocksMap.erase(blockPos);
 
-        int idx = (blockPos.y * CHUNK_WIDTH) + blockPos.z;
+        int idx = (blockPos.y * CHUNK_SIZE) + (blockPos.z * CHUNK_WIDTH) + blockPos.x;
 
-        visibility[idx].setNeighbor(blockPos.x, 0);
+        visibility[idx].setNeighbor(0);
     }
-    void Chunk::createBlock(Coordinate<int> blockPos, RowNeighborInfo* visibility)
+    void Chunk::createBlock(Coordinate<int> blockPos, NeighborInfo* visibility)
     {
         BlockType blockType = BlockType::STONE;
         auto newBlock = Block(blockType);
@@ -138,7 +145,7 @@ namespace Craft
             std::lock_guard<std::mutex> lock(blocksMutex);
             blocksMap.emplace(blockPos, newBlock);
         }
-        int idx = (blockPos.y * CHUNK_WIDTH) + blockPos.z;
+        int idx = (blockPos.y * CHUNK_SIZE) + (blockPos.z * CHUNK_WIDTH) + blockPos.x;
 
         // Construct neighbor info:
         BlockInfo y_maxCoord = getBlockInfo({blockPos.x, blockPos.y + 1, blockPos.z}, chunkPos);
@@ -156,17 +163,19 @@ namespace Craft
         neighborInfo += (*coords)[z_maxCoord.chunk]->find(z_maxCoord.block) == (*coords)[z_maxCoord.chunk]->end() ? 32 : 0;
         neighborInfo += (*coords)[z_minCoord.chunk]->find(z_minCoord.block) == (*coords)[z_minCoord.chunk]->end() ? 64 : 0;
 
-        visibility[idx].setNeighbor(blockPos.x, neighborInfo);
+        visibility[idx].setNeighbor(neighborInfo);
     }
-    void Chunk::initElementBuffer(RowNeighborInfo* visibility)
+    void Chunk::initElementBuffer(NeighborInfo* visibility)
     {
         std::lock_guard<std::mutex> lock(blocksMutex);
         elementCount = 0;
         for (auto blockData: blocksMap)
         {
             Coordinate<int> relCoord = blockData.first;
-            int idx = (relCoord.y * CHUNK_WIDTH) + (relCoord.z);
-            elementCount += visibility[idx][relCoord.x].sum() * 6;
+            int idx = (relCoord.y * CHUNK_SIZE) + (relCoord.z * CHUNK_WIDTH) + (relCoord.x);
+            int currSize = visibility[idx].sum() * 6;
+
+            elementCount += currSize;
         }
 
         delete[] elementBuffer;
@@ -177,8 +186,8 @@ namespace Craft
         for (auto blockData: blocksMap)
         {
             Coordinate<int> relCoord = blockData.first;
-            int idx = (relCoord.y * CHUNK_WIDTH) + (relCoord.z);
-            NeighborsInfo info = visibility[idx][relCoord.x];
+            int idx = (relCoord.y * CHUNK_SIZE) + (relCoord.z * CHUNK_WIDTH) + relCoord.x;
+            NeighborInfo info = visibility[idx];
             fillElementBufferData(elementBuffer, eIdx, currBlocksVerticesIdx, info);
             currBlocksVerticesIdx += 6 * 4;
             eIdx += info.sum() * 6;
