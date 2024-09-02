@@ -32,13 +32,8 @@ namespace Craft
          * @return:        True if the textures were initialize, else False.
          */
         bool initTextures(GLuint program);
-        /**
-         * Retrieve the texture struct of a given block type.
-         *
-         * @param type: The enum type of the block.
-         * @return:     A blockTexture struct.
-         */
-        [[nodiscard]] blockTexture getTexture(BlockType type) const;
+        /// A mapping of BlockType enum to a struct containing the block's texture information.
+        std::unordered_map<BlockType, blockTexture> textureMapping{};
     private:
         /**
          * Initialize the image data into a Sampler2DArray object where each layer is a different texture.
@@ -49,8 +44,6 @@ namespace Craft
          * @see ImageLoadResult
          */
         static GLuint initTextureFromData(std::unordered_map<std::string, ImageLoadResult>& imageData);
-        /// A mapping of BlockType enum to a struct containing the block's texture information.
-        std::unordered_map<BlockType, blockTexture> textureMapping{};
     };
 }
 #endif //OPENGLDEMO_TEXTURES_HPP

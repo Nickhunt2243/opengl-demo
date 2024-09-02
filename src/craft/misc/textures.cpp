@@ -6,8 +6,6 @@
 #include "glm/glm.hpp"
 #include <mutex>
 
-#include "../../helpers/helpers.hpp"
-
 namespace Craft
 {
     Textures::~Textures()
@@ -20,18 +18,6 @@ namespace Craft
             delete keyValue.second.right;
             delete keyValue.second.back;
             delete keyValue.second.left;
-        }
-    }
-    blockTexture Textures::getTexture(BlockType type) const
-    {
-        auto it = textureMapping.find(type);
-        if (it != textureMapping.end())
-        {
-            return it->second;
-        }
-        else
-        {
-            return blockTexture{};
         }
     }
     static std::mutex mutex{};

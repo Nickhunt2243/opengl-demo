@@ -21,6 +21,7 @@ namespace Craft
     template<typename T, typename = std::enable_if_t<is_numeric<T>::value>>
     struct Coordinate
     {
+        Coordinate() :x{0}, y{0}, z{0} {}
         Coordinate(
                 T x, T y, T z
             ) : x{x}, y{y}, z{z}
@@ -52,6 +53,24 @@ namespace Craft
         {
             return os << "Coord(X: " << coord.x  << ", Y: " << coord.y << ", Z: " << coord.z << ");";
         }
+        /**
+         * The addition operator for a Coordinate.
+         *
+         * @param rhs: The right hand coordinate to add.
+         * @return:    A coordinate with the added values.
+         */
+        inline Coordinate<T> operator +(Coordinate<T> rhs) const {
+            return Coordinate<T>{x + rhs.x, y + rhs.y, z + rhs.z};
+        }
+        /**
+         * The equality operator for a Coordinate.
+         *
+         * @param other: The right hand coordinate to compare.
+         * @return:      A Boolean of whether the coordinates are equal.
+         */
+        inline bool operator==(const Coordinate<T>& other) const {
+            return x == other.x && y == other.y && z == other.z;
+        }
     };
 
     /// A struct containing coordinate information for a given x and z position.
@@ -60,6 +79,7 @@ namespace Craft
     struct Coordinate2D
     {
         Coordinate2D(T x, T z) : x{x}, z{z} {}
+        Coordinate2D() :x{0}, z{0} {}
         /// The x position of the object.
         T x;
         /// The z position of the object.
@@ -150,35 +170,34 @@ namespace Craft
 
 namespace std
 {
-    /**
-     * A function for determining the hash of a Coordinate pointer.
-     */
-    template<typename T>
-    struct hash<Craft::Coordinate<T>*>
+
+/**
+ * A function for determining the hash of a Coordinate pointer.
+ */
+template<typename T>
+struct hash<Craft::Coordinate<T>>
+{
+    size_t operator()(const Craft::Coordinate<T> coord) const
     {
-        size_t operator()(const Craft::Coordinate<T>* coord) const
-        {
-            if (coord == nullptr) return 0;
-            size_t hx = hash<T>()(coord->x);
-            size_t hy = hash<T>()(coord->y);
-            size_t hz = hash<T>()(coord->z);
-            return hx ^ (hy << 1) ^ (hz << 2); // Combine the hashes
-        }
-    };
-    /**
-     * A function for determining equality of coordinate pointers.
-     */
-    template<typename T>
-    struct equal_to<Craft::Coordinate<T>*>
+        size_t hx = hash<T>()(coord.x);
+        size_t hy = hash<T>()(coord.y);
+        size_t hz = hash<T>()(coord.z);
+        return hx ^ (hy << 1) ^ (hz << 2); // Combine the hashes
+    }
+};
+/**
+ * A function for determining equality of coordinate pointers.
+ */
+template<typename T>
+struct equal_to<Craft::Coordinate<T>>
+{
+    bool operator()(const Craft::Coordinate<T> lhs, const Craft::Coordinate<T> rhs) const
     {
-        bool operator()(const Craft::Coordinate<T>* lhs, const Craft::Coordinate<T>* rhs) const
-        {
-            if (lhs == nullptr || rhs == nullptr) return lhs == rhs;
-            return lhs->x == rhs->x &&
-                   lhs->y == rhs->y &&
-                   lhs->z == rhs->z;
-        }
-    };
+        return lhs.x == rhs.x &&
+               lhs.y == rhs.y &&
+               lhs.z == rhs.z;
+    }
+};
 
     /**
      * A function for determining the hash of a Coordinate2D pointer.

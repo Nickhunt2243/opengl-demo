@@ -43,6 +43,21 @@ ImageData* getImageContents(const std::string& texturePath)
 
     return imgData;
 }
+void saveImageAsPNG(unsigned char* rgbaData, int width, int height)
+{
+    const std::string& filename = R"(C:\Users\admin\CLionProjects\opengl-demo\test.png)";
+    // Save the image data to a PNG file using stb_image_write
+    int result = stbi_write_png(filename.c_str(), width, height, 4, rgbaData, width * 4);
+
+    if (result == 0)
+    {
+        std::cerr << "Failed to save image to " << filename << std::endl;
+    }
+    else
+    {
+        std::cout << "Image saved successfully to " << filename << std::endl;
+    }
+}
 bool endsWith(const std::string& s, const std::string& ending)
 {
     if (ending.size() > s.size()) return false;
@@ -91,6 +106,11 @@ void setVec2(GLuint program, const std::string &name, glm::vec2 value)
     GLint loc = getLoc(program, name);
     glUniform2fv(loc, 1, glm::value_ptr(value));
 }
+void setiVec2(GLuint program, const std::string &name, glm::vec2 value)
+{
+    GLint loc = getLoc(program, name);
+    glUniform2iv(loc, 1, (const int *) glm::value_ptr(value));
+}
 void setVec3(GLuint program, const std::string &name, glm::vec3 value)
 {
     GLint loc = getLoc(program, name);
@@ -121,4 +141,34 @@ void printMatrix4x4(glm::mat4& mat, const std::string& name)
         if (i % 4 == 3 && i != 15) std::cout << "\n\t";
     }
     std::cout << "\n}" << std::endl;
+}
+
+Craft::BlockInfo getBlockInfo(Craft::Coordinate<int> block, Craft::Coordinate2D<int> chunkPos)
+{
+    Craft::BlockInfo info
+            {
+                    block,
+                    chunkPos
+            };
+    if (block.z < 0)
+    {
+        info.block.z += 16;
+        info.chunk.z -= 1;
+    }
+    if (block.z > 15)
+    {
+        info.block.z -= 16;
+        info.chunk.z += 1;
+    }
+    if (block.x < 0)
+    {
+        info.block.x += 16;
+        info.chunk.x -= 1;
+    }
+    if (block.x > 15)
+    {
+        info.block.x -= 16;
+        info.chunk.x += 1;
+    }
+    return info;
 }

@@ -6,12 +6,12 @@
 #include "app.hpp"
 #include "../craft/misc/textures.hpp"
 
-#define WINDOW_WIDTH 1440
-#define WINDOW_HEIGHT 920
+#define WINDOW_WIDTH 1500
+#define WINDOW_HEIGHT 1000
+
 #define BLOCK_VERT_SHADER_PATH "src/assets/shader/block.vert"
 #define BLOCK_GEOM_SHADER_PATH "src/assets/shader/block.geom"
 #define BLOCK_FRAG_SHADER_PATH "src/assets/shader/block.frag"
-
 #define WORLD_VERT_SHADER_PATH "src/assets/shader/default.vert"
 #define WORLD_GEOM_SHADER_PATH ""
 #define WORLD_FRAG_SHADER_PATH "src/assets/shader/default.frag"
@@ -21,6 +21,7 @@
 #define SCENE_VERT_SHADER_PATH "src/assets/shader/scene.vert"
 #define SCENE_GEOM_SHADER_PATH ""
 #define SCENE_FRAG_SHADER_PATH "src/assets/shader/scene.frag"
+#define NEIGHBOR_COMP_SHADER_PATH "src/assets/shader/neighbor.comp"
 
 namespace Engine
 {
@@ -30,23 +31,19 @@ namespace Engine
         , worldProgram{new Program(WORLD_VERT_SHADER_PATH, WORLD_GEOM_SHADER_PATH, WORLD_FRAG_SHADER_PATH)}
         , orthoProgram{new Program(ORTHO_VERT_SHADER_PATH, ORTHO_GEOM_SHADER_PATH, ORTHO_FRAG_SHADER_PATH)}
         , sceneProgram{new Program(SCENE_VERT_SHADER_PATH, SCENE_GEOM_SHADER_PATH, SCENE_FRAG_SHADER_PATH)}
-        , world{new Craft::World(&window, program, worldProgram, WINDOW_WIDTH, WINDOW_HEIGHT)}
+        , neighborCompute{new Compute(NEIGHBOR_COMP_SHADER_PATH)}
+        , world{new Craft::World(&window, program, worldProgram, neighborCompute, WINDOW_WIDTH, WINDOW_HEIGHT)}
         , crossHair{new Craft::CrossHair(orthoProgram, &window)}
     {}
     Application::~Application()
     {
         delete crossHair;
         delete world;
+        delete neighborCompute;
         delete worldProgram;
         delete orthoProgram;
         delete program;
         glDeleteFramebuffers(1, &FBO);
-    }
-    void checkOpenGLError(const std::string& location) {
-        GLenum error;
-        while ((error = glGetError()) != GL_NO_ERROR) {
-            std::cerr << "OpenGL Error " << error << " at " << location << std::endl;
-        }
     }
     void Application::initFBO()
     {
@@ -125,6 +122,11 @@ namespace Engine
             std::cerr << "Failed to initialize scene program." << std::endl;
             return false;
         }
+        if (!neighborCompute->initCompute())
+        {
+            std::cerr << "Failed to initialize neighbors compute." << std::endl;
+            return false;
+        }
 
         // Initialize the ProjT.
         projMatrix = glm::perspective(glm::radians(80.0f), ((float) WINDOW_WIDTH /  (float) WINDOW_HEIGHT), 0.1f, 4000.0f);
@@ -183,6 +185,7 @@ namespace Engine
             // Draw the crossHair last as it uses special proj and view matrices.
             drawHUD();
             glfwSwapBuffers(window.getWindow());
+            // Poll for mouse and keyboard events
             glfwPollEvents();
 
         }

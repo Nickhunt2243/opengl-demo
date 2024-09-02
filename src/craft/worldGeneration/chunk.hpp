@@ -5,22 +5,17 @@
 #ifndef OPENGLDEMO_Chunk_HPP
 #define OPENGLDEMO_Chunk_HPP
 
-#ifndef CHUNK_WIDTH
-#define CHUNK_WIDTH 16
-#endif
-#ifndef CHUNK_HEIGHT
-#define CHUNK_HEIGHT 128
-#endif
 #include <unordered_map>
 #include <functional>
 #include <thread>
 #include <bitset>
 
+#include "block.hpp"
+#include "../misc/coordinate.hpp"
+#include "../misc/globals.hpp"
+#include "../misc/textures.hpp"
 #include "../../helpers/threadPool.hpp"
 #include "../../setup/program.hpp"
-#include "block.hpp"
-#include "../misc/textures.hpp"
-#include "../misc/coordinate.hpp"
 
 namespace Craft
 {
@@ -30,12 +25,12 @@ namespace Craft
         Chunk(
             Engine::Program* blockProgram,
             int x, int z,
-            std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords,
+            std::unordered_map<Coordinate2D<int>, std::unordered_map<Coordinate<int>, Block>*>* coords,
             std::mutex* coordsMutex
         );
         ~Chunk();
         /// Initialize a Chunk found at the x, z coordinates.
-        void initChunk();
+        void initChunk(RowNeighborInfo* visibility);
         /**
          * A function to draw the chunk using OpenGL.
          *
@@ -51,53 +46,23 @@ namespace Craft
         /// A static textures object.
         static Textures* textures;
         /// Initialize the Element Buffer array.
-        void initElementBuffer();
-        /**
-         * A function to update neighbor info within the block.
-         *
-         * Figure out which sides of the block have a block next to them.
-         *
-         * @param idx: The index of block in the blocks array.
-         */
-        void updateNeighborInfo();
-        /**
-         * Determine whether to draw the entire front edge of a chunk based on whether the
-         * chunk next to it has blocks.
-         *
-         * @param frontChunkBitMap: The Chunk that is +1 z away from the current.
-         */
-        void updateChunkFront(
-            std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* frontChunkBitMap
-        );
-        /**
-         * Determine whether to draw the entire right edge of a chunk based on whether the
-         * chunk next to it has blocks.
-         *
-         * @param rightChunkBitMap: The Chunk that is +1 x away from the current.
-         */
-        void updateChunkRight(
-            std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* rightChunkBitMap
-        );
-        /**
-         * Determine whether to draw the entire back edge of a chunk based on whether the
-         * chunk next to it has blocks.
-         *
-         * @param backChunkBitMap: The Chunk that is -1 z away from the current.
-         */
-        void updateChunkBack(
-            std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* backChunkBitMap
-        );
-        /**
-         * Determine whether to draw the entire left edge of a chunk based on whether the
-         * chunk next to it has blocks.
-         *
-         * @param leftChunkBitMap: The Chunk that is -1 x away from the current.
-         */
-        void updateChunkLeft(
-            std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>* leftChunkBitMap
-        );
+        void initElementBuffer(RowNeighborInfo* visibility);
         /// A bitset for every block in the chunk. Set to true if a block occupies that space, otherwise false.
-        std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT> blockCoords{0};
+        std::unordered_map<Coordinate<int>, Block> blockCoords{0};
+        /**
+         * Create a block at the given position.
+         *
+         * @param blockPos:   The position at which to create a block.
+         * @param visibility: The neighbor information for the given chunk.
+         */
+        void createBlock(Coordinate<int> blockPos, RowNeighborInfo* visibility);
+        /**
+         * Delete a block at the given position.
+         *
+         * @param blockPos:   The position at which to delete the block.
+         * @param visibility: The neighbor information for the given chunk.
+         */
+        void deleteBlock(Coordinate<int> blockPos, RowNeighborInfo* visibility);
     private:
         /// The Vertex Array Object of the OpenGL program.
         GLuint VAO{0},
@@ -114,11 +79,11 @@ namespace Craft
         /// A mutex for creating/accessing blocks
         std::mutex blocksMutex{};
         /// The array of all blocks within this chunk.
-        std::vector<Block*> blocks{};
+        std::unordered_map<Coordinate<int>, Block> blocksMap{};
         /// The vertex buffer array.
         int* vertexBufferData{nullptr};
         /// The element buffer array.
-        unsigned int* elementBuffer{nullptr};
+        uint32_t* elementBuffer{nullptr};
         /// The size of the VBO (numBlocks * vertices per block)
         int vboSize{0};
         /// The number of elements to draw.
@@ -127,11 +92,10 @@ namespace Craft
         Coordinate2D<int> chunkPos;
         /// The unsigned integer of the current program.
         Engine::Program* blockProgram;
-        /// A pointer to the mapping of chunk coordinate to block coord bitset.
-        std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords;
+        /// A pointer to the mapping of chunk coordinate to block coord map.
+        std::unordered_map<Coordinate2D<int>, std::unordered_map<Coordinate<int>, Block>*>* coords;
         /// A Boolean of whether we need to initialize the EBO
         bool needToInitElements{false};
-        /// Initialize the Element Buffer Object.
         void initEBO();
         /// Initialize the Vertex Array Object.
         void initVAO();

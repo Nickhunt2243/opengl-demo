@@ -29,8 +29,8 @@ namespace Engine
             Window* window,
             Program* program,
             Program* worldProgram,
-            unsigned int width,
-            unsigned int height,
+            uint32_t width,
+            uint32_t height,
             float x, float y, float z
         );
         ~Camera() = default;
@@ -72,7 +72,7 @@ namespace Engine
         /// The sensitivity of the camera.
         float sensitivity{0.075f};
         /// The height and width of the current window.
-        unsigned int windowWidth,
+        uint32_t windowWidth,
                      windowHeight;
         /// The 3x1 vector describing the cameras front direction.
         glm::vec3 cameraFront{glm::vec3(-1.0f, -0.35f, 0.0f)};

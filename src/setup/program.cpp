@@ -42,7 +42,6 @@ namespace Engine
         char infoLog[512];
         bool isVertShader = endsWith(shaderPath, ".vert");
         bool isGeomShader = endsWith(shaderPath, ".geom");
-
         GLint shader;
         if (isVertShader)
         {
@@ -89,6 +88,7 @@ namespace Engine
         char infoLog[512];
         glAttachShader(program, vertShader);
         glAttachShader(program, fragShader);
+
         glLinkProgram(program);
         glGetProgramiv(program, GL_LINK_STATUS, &success);
         if(!success)
