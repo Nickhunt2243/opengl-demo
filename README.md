@@ -108,7 +108,7 @@ You can use:
 - space &#8594; jump or fly up.
 - left shift &#8594; fly down (when enabled)
 
-Additionally, you can use the mouse to look around.
+Additionally, you can use the mouse to look around, left click will delete blocks, and right click will place them.
 
 ### Project Structure
 
