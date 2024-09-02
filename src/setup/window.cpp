@@ -5,8 +5,8 @@
 namespace Engine
 {
     Window::Window(int width, int height, std::string name)
-        : width( width )
-        , height( height )
+        : width{width}
+        , height{height}
         , name( std::move(name) )
     {}
     Window::~Window()
@@ -41,8 +41,8 @@ namespace Engine
             return false;
         }
 
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
         // Get the primary monitor
@@ -50,7 +50,7 @@ namespace Engine
         if (!primaryMonitor) {
             std::cerr << "Failed to get the primary monitor" << std::endl;
             glfwTerminate();
-            return -1;
+            return false;
         }
 
         // Get the video mode of the primary monitor
@@ -58,13 +58,13 @@ namespace Engine
         if (!videoMode) {
             std::cerr << "Failed to get the video mode of the primary monitor" << std::endl;
             glfwTerminate();
-            return -1;
+            return false;
         }
-        width = videoMode->width;
-        height = videoMode->height;
+//        width = 1500;//videoMode->width;
+//        height = 1000;//videoMode->height;
 
 
-        window = glfwCreateWindow(videoMode->width, videoMode->height,  name.c_str(), nullptr, nullptr);
+        window = glfwCreateWindow(width,height,  name.c_str(), nullptr, nullptr);
         if (window == nullptr)
         {
             std::cerr << "Failed to create GLFW window" << std::endl;

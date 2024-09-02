@@ -4,30 +4,16 @@
 
 #ifndef OPENGLDEMO_PLAYER_HPP
 #define OPENGLDEMO_PLAYER_HPP
-#ifndef CHUNK_OFFSET
-#define CHUNK_OFFSET 0.5f
-#endif
-#ifndef CHUNK_WIDTH
-#define CHUNK_WIDTH 16
-#endif
-#ifndef CHUNK_HEIGHT
-#define CHUNK_HEIGHT 128
-#endif
-
-#define PLAYER_FRONT_BOUND 0.15l
-#define PLAYER_BACK_BOUND 0.15l
-#define PLAYER_LEFT_BOUND 0.3l
-#define PLAYER_RIGHT_BOUND 0.3l
 
 
 #include <iostream>
 #include <unordered_set>
 #include <cmath>
 #include <mutex>
-#include <bitset>
 
 #include "entity.hpp"
 #include "../misc/coordinate.hpp"
+#include "../misc/globals.hpp"
 #include "../../setup/camera.hpp"
 #include "../../setup/window.hpp"
 #include "../../setup/program.hpp"
@@ -43,9 +29,9 @@ namespace Craft
             Engine::Window* window,
             Engine::Program* blockProgram,
             Engine::Program* worldProgram,
-            unsigned int width,
-            unsigned int height,
-            std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords,
+            uint32_t width,
+            uint32_t height,
+            std::unordered_map<Coordinate2D<int>, std::unordered_map<Coordinate<int>, Block>*>* coords,
             std::mutex* coordsMutex
         );
         /**
@@ -56,6 +42,21 @@ namespace Craft
         bool initPlayer();
         /// A method for updating the players state.
         Coordinate2D<int> updatePlayer();
+        /// Retrieve the block located at lookAtBlock on the side that you are looking at.
+        Coordinate<int> getNextLookAtBlock() const;
+        /// The block the player is looking at.
+        Coordinate<int>* lookAtBlock{};
+        /// The side of the block the player is looking at (used later for placing blocks).
+        BlockSideType lookAtSide{BlockSideType::NONE};
+        /**
+         * This is a really simple function that determines if the block being placed intersects with the players bounds.
+         *
+         * @return A Boolean of whether the block intersects with the player.
+         */
+        bool playerIntersectsBlock();
+        inline Engine::Camera* getCamera() {
+            return &camera;
+        }
     private:
         /// The game timer.
         Engine::Timer* timer;
@@ -66,16 +67,12 @@ namespace Craft
         /// The vec3 describing the View matrices up direction.
         glm::vec3 cameraUp{glm::vec3(0.0f, 1.0f,  0.0f)};
         /// A mapping of chunk coords to a block placement bitmap for collision.
-        std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords;
+        std::unordered_map<Coordinate2D<int>, std::unordered_map<Coordinate<int>, Block>*>* coords;
         /// A pointer to the GLFW window.
         Engine::Window* window;
         /// The camera of the scene.
         Engine::Camera camera;
-        /// The block the player is looking at.
-        Coordinate<int>* lookAtBlock{};
-        /// The side of the block the player is looking at (used later for placing blocks).
-        BlockSideType lookAtSide{BlockSideType::NONE};
-
+        /// A mutex for accessing the coords mapping.
         std::mutex* coordsMutex;
         /**
          * Determine whether the t scalar value derived from the ray-AABB algorithm intersects within the bounds
@@ -97,7 +94,7 @@ namespace Craft
          * @param nextSide: The intersection of the previous block.
          * @return:         The distance from the closest block that intersects.
          */
-        long double rayIntersection(long double t, glm::vec3 pos, glm::vec3 normDir, int blockX, int blockY, int blockZ, BlockSideType currSide, BlockSideType nextSide);
+        long double rayIntersection(long double t, glm::vec3 pos, glm::vec3 normDir, int blockX, int blockY, int blockZ, BlockSideType currSide, BlockSideType nextSide, int depth);
         /**
          * Simple algorithm I wrote using Ray-AABB collision algorithm from:
          *
@@ -118,7 +115,7 @@ namespace Craft
          * @param prevSide: The intersection of the previous block.
          * @return:         The distance from the closest block that intersects.
          */
-        long double performRayAABB(glm::vec3 pos, glm::vec3 dir, int blockX, int blockY, int blockZ, BlockSideType prevSide);
+        long double performRayAABB(glm::vec3 pos, glm::vec3 dir, int blockX, int blockY, int blockZ, BlockSideType prevSide, int depth);
 
         /// Simple function for calculating the Euclidean distance of two points in 3D space.
         inline static long double eucDistance(

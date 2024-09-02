@@ -1,12 +1,7 @@
 #ifndef OPENGLDEMO_SUN_HPP
 #define OPENGLDEMO_SUN_HPP
 
-#ifndef M_PI
-#define M_PI           3.14159265358979323846f  /* pi */
-#endif
-#define SUN_DISTANCE 384 // Allows 48 Chunks without overlap but will
-#define SUN_WIDTH 50
-#define TIME_CONVERSION (1.0f / 13.8f) /* Each 1s in Minecraft is 13.8 ms in real time. */
+
 
 #include "glad/glad.h"
 #include "glm/glm.hpp"
@@ -16,6 +11,7 @@
 
 #include "../../helpers/timer.hpp"
 #include "../misc/types.hpp"
+#include "../misc/globals.hpp"
 #include "../../setup/program.hpp"
 
 namespace Craft

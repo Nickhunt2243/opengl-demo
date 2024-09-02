@@ -4,6 +4,7 @@
 #include "window.hpp"
 #include "program.hpp"
 #include "camera.hpp"
+#include "compute.hpp"
 #include "../craft/entities/player.hpp"
 #include "../craft/worldGeneration/chunk.hpp"
 #include "../craft/misc/textures.hpp"
@@ -38,6 +39,8 @@ namespace Engine
         Program* worldProgram;
         /// The program for rendering 2D objects for the HUD.
         Program* orthoProgram;
+        /// The program for our neighbor compute
+        Compute* neighborCompute;
         /// The program for rendering the scenes quad to the screen.
         Program* sceneProgram;
         /// The player world.

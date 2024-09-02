@@ -5,24 +5,17 @@
 #ifndef OPENGLDEMO_ENTITY_HPP
 #define OPENGLDEMO_ENTITY_HPP
 
-#ifndef CHUNK_OFFSET
-#define CHUNK_OFFSET 0.5f
-#endif
-#ifndef CHUNK_WIDTH
-#define CHUNK_WIDTH 16
-#endif
-#ifndef CHUNK_HEIGHT
-#define CHUNK_HEIGHT 128
-#endif
-
 #include <bitset>
 #include <mutex>
 
 #include "../misc/coordinate.hpp"
+#include "../worldGeneration/block.hpp"
 #include "../../helpers/timer.hpp"
 #include "../../setup/window.hpp"
 #include "../../setup/program.hpp"
+#include "../misc/globals.hpp"
 #include "../misc/types.hpp"
+#include "../../helpers/helpers.hpp"
 
 namespace Craft
 {
@@ -34,7 +27,7 @@ namespace Craft
             long double x, long double y, long double z,
             Coordinate2D<int> chunkPos,
             long double front, long double back, long double left, long double right,
-            std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords
+            std::unordered_map<Coordinate2D<int>, std::unordered_map<Coordinate<int>, Block>*>* coords
         );
         ~Entity() = default;
         /// The entity's X, Y, and Z coordinates.
@@ -81,7 +74,7 @@ namespace Craft
         /// The initial fall height of the player. Used for falling with a displacement.
         long double initialFallHeight{-1};
         /// A mapping of chunk coords to a block placement bitmap for collision.
-        std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords;
+        std::unordered_map<Coordinate2D<int>, std::unordered_map<Coordinate<int>, Block>*>* coords;
         /**
          * A function for telling if the players coordinates are on top of a block.
          *
@@ -94,15 +87,6 @@ namespace Craft
          * @return True if the player is on a block.
          */
         bool blockBelowEntity(float angle);
-        /**
-         * Retrieve a given block's X, Z, and chunk coordinate normalized in 0-15 indexing.
-         *
-         * @param blockX:   The current block X value.
-         * @param blockZ:   The current block Z value.
-         * @param chunkPos: The current chunk position.
-         * @return:       A struct containing the blocks x, z, and chunk coordinate.
-         */
-        blockInfo getBlockInfo(int blockX, int blockZ, Coordinate2D<int> chunkPos);
         /**
          * A method to handle x/z head on collision.
          *
@@ -125,7 +109,6 @@ namespace Craft
          * @return:           A Coordinate2D holding the x and z correction if colliding with another block.
          */
         Coordinate2D<long double> entityCollidedAtCorner(int xDirection, int zDirection);
-
         /**
          * Calculate the Y displacement overtime when falling.
          *

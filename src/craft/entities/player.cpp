@@ -5,28 +5,19 @@
 #include "player.hpp"
 #include "../../helpers/helpers.hpp"
 
-#ifndef M_PI
-#define M_PI           3.14159265358979323846  /* pi */
-#endif
-#ifndef M_PI_4
-#define M_PI_4 (M_PI / 4.0f)
-#endif
-#ifndef MAX_BLOCKS
-#define MAX_BLOCKS (CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT)
-#endif
-#define JUMP_HEIGHT 1.25f
-#define PLAYER_EYE_DIFF 0.38f
-#define REACH_DISTANCE 4.5l
-
 namespace Craft {
+    long double playerInitialX = 13,
+                playerInitialY = 103l,
+                playerInitialZ = 10;
+
     Player::Player(
             Engine::Timer *timer,
             Engine::Window *window,
             Engine::Program *blockProgram,
             Engine::Program *worldProgram,
-            unsigned int width,
-            unsigned int height,
-            std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT> *> *coords,
+            uint32_t width,
+            uint32_t height,
+            std::unordered_map<Coordinate2D<int>, std::unordered_map<Coordinate<int>, Block> *> *coords,
             std::mutex* coordsMutex
     )
             : timer{timer}
@@ -37,7 +28,7 @@ namespace Craft {
             , Entity
             {
                     timer,
-                    1.5l, 101.0l, 13.5l,
+                    playerInitialX, playerInitialY, playerInitialZ,
                     Coordinate2D<int>{0, 0},
                     PLAYER_FRONT_BOUND, PLAYER_BACK_BOUND, PLAYER_LEFT_BOUND, PLAYER_RIGHT_BOUND,
                     coords
@@ -58,8 +49,70 @@ namespace Craft {
 
         return true;
     }
+    Coordinate<int> Player::getNextLookAtBlock() const
+    {
+        std::cout << "Current: " << *lookAtBlock << std::endl;
+        switch (lookAtSide)
+        {
+            case BlockSideType::X_MAX:
+                return *lookAtBlock + Coordinate<int>{1, 0, 0};
+            case BlockSideType::X_MIN:
+                return *lookAtBlock + Coordinate<int>{-1, 0, 0};
+            case BlockSideType::Y_MAX:
+                return *lookAtBlock + Coordinate<int>{0, 1, 0};
+            case BlockSideType::Y_MIN:
+                return *lookAtBlock + Coordinate<int>{0, -1, 0};
+            case BlockSideType::Z_MAX:
+                return *lookAtBlock + Coordinate<int>{0, 0, 1};
+            case BlockSideType::Z_MIN:
+                return *lookAtBlock + Coordinate<int>{0, 0, -1};
+            case BlockSideType::NONE:
+                return {0, 0, 0};
+        }
+        return {0, 0, 0};
+    }
+    bool Player::playerIntersectsBlock()
+    {
+        if (lookAtBlock == nullptr) return false;
+        bool blockIntersects = false;
+        Coordinate<int> blockToAdd = getNextLookAtBlock();
+        long double playersLowerBoundY = entityY - 2.0l,
+                    playersUpperBoundY = entityY,
+                    playersLowerBoundX = entityX - PLAYER_BOUND,
+                    playersUpperBoundX = entityX + PLAYER_BOUND,
+                    playersLowerBoundZ = entityZ - PLAYER_BOUND,
+                    playersUpperBoundZ = entityZ + PLAYER_BOUND;
 
-    Coordinate2D<int> Player::updatePlayer() {
+        int blockUpperBoundY = blockToAdd.y + 1,
+            blockLowerBoundY = blockToAdd.y,
+            blockUpperBoundX = blockToAdd.x + 1,
+            blockLowerBoundX = blockToAdd.x,
+            blockUpperBoundZ = blockToAdd.z + 1,
+            blockLowerBoundZ = blockToAdd.z;
+
+
+        if (
+                (
+                    (blockLowerBoundY >= playersLowerBoundY && blockLowerBoundY < playersUpperBoundY) ||
+                    (blockUpperBoundY > playersLowerBoundY && blockUpperBoundY <= playersUpperBoundY)
+                ) &&
+                (
+                    (playersLowerBoundX >= blockLowerBoundX && playersLowerBoundX <= blockUpperBoundX) ||
+                    (playersUpperBoundX >= blockLowerBoundX && playersUpperBoundX <= blockUpperBoundX)
+                ) &&
+                (
+                    (playersLowerBoundZ >= blockLowerBoundZ && playersLowerBoundZ <= blockUpperBoundZ) ||
+                    (playersUpperBoundZ >= blockLowerBoundZ && playersUpperBoundZ <= blockUpperBoundZ)
+                )
+            )
+        {
+            return true;
+        }
+
+        return blockIntersects;
+    }
+    Coordinate2D<int> Player::updatePlayer()
+    {
         glm::vec3 cameraPos = glm::vec3{entityX + (originChunk.x * 16), entityY, entityZ + (originChunk.z * 16)};
         glm::vec3 cameraFront = camera.getCameraFront();
 
@@ -155,7 +208,7 @@ namespace Craft {
             else if (vertMovement == EntityVertMovementType::STATIONARY)
             {
                 vertMovement = EntityVertMovementType::JUMPING;
-                initialJumpHeight = floor(entityY);
+                initialJumpHeight = (float) floor(entityY);
                 timer->startStopWatch();
             }
         }
@@ -216,21 +269,16 @@ namespace Craft {
         }
 
         cameraPos.y -= PLAYER_EYE_DIFF;
-        performRayAABB(cameraPos, glm::normalize(cameraFront), floor(cameraPos.x), floor(cameraPos.y), floor(cameraPos.z), BlockSideType::NONE);
-//        std::cout << "Pos: " << Coordinate<float>{cameraPos.x, cameraPos.y, cameraPos.z} << std::endl;
-//        std::cout << "Pos: " << Coordinate<int>{(int)floor(cameraPos.x), (int)floor(cameraPos.y), (int)floor(cameraPos.z)} << std::endl;
-//        std::cout << Coordinate<float>{glm::normalize(cameraFront).x, glm::normalize(cameraFront).y, glm::normalize(cameraFront).z} << std::endl;
+        performRayAABB(cameraPos, glm::normalize(cameraFront), (int) floor(cameraPos.x), (int) floor(cameraPos.y), (int) floor(cameraPos.z), BlockSideType::NONE, 0);
         blockProgram->useProgram();
         if (lookAtBlock != nullptr)
         {
-//            std::cout << "Look at: " << *lookAtBlock << std::endl;
             setVec3(blockProgram->getProgram(), "u_lookAtBlock", *lookAtBlock);
             setBool(blockProgram->getProgram(), "u_hasLookAt", true);
         }
         else
         {
             setBool(blockProgram->getProgram(), "u_hasLookAt", false);
-
         }
         // Update the camera.
         if (!camera.updateCamera(cameraPos, cameraUp)) {
@@ -281,13 +329,15 @@ namespace Craft {
         else if (intersectedSide == BlockSideType::Y_MIN) return {0, -1, 0};
         else if (intersectedSide == BlockSideType::Z_MAX) return {0, 0, 1};
         else if (intersectedSide == BlockSideType::Z_MIN) return {0, 0, -1};
+        return {0, 0, 0};
     }
     long double Player::rayIntersection(
             long double t,
             glm::vec3 pos,
             glm::vec3 normDir,
             int blockX, int blockY, int blockZ,
-            BlockSideType currSide, BlockSideType nextSide
+            BlockSideType currSide, BlockSideType nextSide,
+            int depth
         )
     {
         // Intersection will be behind player
@@ -314,13 +364,12 @@ namespace Craft {
             Coordinate2D<int> chunkPos{(int) floor(nextBlockX / 16), (int) floor(nextBlockZ / 16)};
             int chunkBlockX = nextBlockX - (chunkPos.x * 16);
             int chunkBlockZ = nextBlockZ - (chunkPos.z * 16);
-            blockInfo info = getBlockInfo(chunkBlockX, chunkBlockZ, chunkPos);
+            BlockInfo info = getBlockInfo({chunkBlockX, nextBlockY, chunkBlockZ}, chunkPos);
             // Checking if is block.
-            int blockIdx = (nextBlockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
             bool isBlock;
             {
                 std::lock_guard<std::mutex> lock(*coordsMutex);
-                isBlock = (blockIdx >= 0 && blockIdx < MAX_BLOCKS && (*coords->at(info.chunk))[blockIdx]);
+                isBlock = (*coords->at(info.chunk)).find(info.block) != (*coords->at(info.chunk)).end();
             }
             if (
                     isBlock && (lookAtBlock == nullptr ||
@@ -343,69 +392,71 @@ namespace Craft {
             }
             else if (isBlock && lookAtBlock->x == nextBlockX && lookAtBlock->y== nextBlockY && lookAtBlock->z == nextBlockZ)
             {
+                lookAtSide = currSide;
                 return distFromPlayer;
             }
             else
             {
-                return performRayAABB(pos, normDir, nextBlockX, nextBlockY, nextBlockZ, nextSide);
+                return performRayAABB(pos, normDir, nextBlockX, nextBlockY, nextBlockZ, nextSide, depth + 1);
             }
         }
         // return 0.0l meaning there was no intersection within bounds, so we will not count this as an intersection.
         return 0.0l;
     }
 
-    long double Player::performRayAABB(glm::vec3 pos, glm::vec3 normDir, int blockX, int blockY, int blockZ, BlockSideType prevSide)
+    long double Player::performRayAABB(glm::vec3 pos, glm::vec3 normDir, int blockX, int blockY, int blockZ, BlockSideType prevSide, int depth = 0)
     {
-        // Remember to
+        // Base condition to prevent stack overflow.
+        if (depth > 5) return REACH_DISTANCE + .5; // returning a value > REACH_DISTANCE
         long double t;
         long double rayIntersectionDist = 0.0f;
         // If we enter from x max then we will not check x_min since it is the same side, etc.
         if (prevSide != BlockSideType::X_MAX)
         {
             // Checking x_min
-            t = (blockX - pos.x) / normDir.x;
+            t = ((float) blockX - pos.x) / normDir.x;
             rayIntersectionDist = rayIntersection(
-                    t, pos, normDir, blockX, blockY, blockZ, BlockSideType::X_MAX, BlockSideType::X_MIN
+                    t, pos, normDir, blockX, blockY, blockZ, BlockSideType::X_MAX, BlockSideType::X_MIN, depth
             );
         }
         if (prevSide != BlockSideType::X_MIN && rayIntersectionDist == 0)
         {
             // Checking x_max
-            t = ((blockX + 1) - pos.x) / normDir.x;
+            t = ((float) (blockX + 1) - pos.x) / normDir.x;
             rayIntersectionDist = rayIntersection(
-                    t, pos, normDir, blockX, blockY, blockZ, BlockSideType::X_MIN, BlockSideType::X_MAX
+                    t, pos, normDir, blockX, blockY, blockZ, BlockSideType::X_MIN, BlockSideType::X_MAX, depth
             );
         }
         if (prevSide != BlockSideType::Y_MAX && rayIntersectionDist == 0.0l)
         {
             // Checking y_min
-            t = (blockY - pos.y) / normDir.y;
+            t = ((float) blockY - pos.y) / normDir.y;
             rayIntersectionDist = rayIntersection(
-                    t, pos, normDir, blockX, blockY, blockZ, BlockSideType::Y_MAX, BlockSideType::Y_MIN
+                    t, pos, normDir, blockX, blockY, blockZ, BlockSideType::Y_MAX, BlockSideType::Y_MIN, depth
             );
         }
         if (prevSide != BlockSideType::Y_MIN && rayIntersectionDist == 0.0l)
         {
             // Checking z_max
-            t = ((blockY + 1) - pos.y) / normDir.y;
+            t = ((float) (blockY + 1) - pos.y) / normDir.y;
             rayIntersectionDist = rayIntersection(
-                    t, pos, normDir, blockX, blockY, blockZ, BlockSideType::Y_MIN, BlockSideType::Y_MAX
+                    t, pos, normDir, blockX, blockY, blockZ, BlockSideType::Y_MIN, BlockSideType::Y_MAX, depth
             );
         }
         if (prevSide != BlockSideType::Z_MAX && rayIntersectionDist == 0.0l)
         {
             // Checking z_min
-            t = (blockZ - pos.z) / normDir.z;
+            t = ((float) blockZ - pos.z) / normDir.z;
             rayIntersectionDist = rayIntersection(
-                    t, pos, normDir, blockX, blockY, blockZ, BlockSideType::Z_MAX, BlockSideType::Z_MIN
+                    t, pos, normDir, blockX, blockY, blockZ, BlockSideType::Z_MAX, BlockSideType::Z_MIN, depth
             );
         }
         if (prevSide != BlockSideType::Z_MIN && rayIntersectionDist == 0.0l)
         {
             // Checking z_max
-            t = ((blockZ + 1) - pos.z) / normDir.z;
+            t = ((float) (blockZ + 1) - pos.z) / normDir.z;
             rayIntersectionDist = rayIntersection(
-                    t, pos, normDir, blockX, blockY, blockZ, BlockSideType::Z_MIN, BlockSideType::Z_MAX
+                    t, pos, normDir, blockX, blockY, blockZ, BlockSideType::Z_MIN, BlockSideType::Z_MAX, depth
             );
         }
 

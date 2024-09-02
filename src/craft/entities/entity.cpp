@@ -5,13 +5,7 @@
 #include <iostream>
 #include "entity.hpp"
 
-#define PLAYER_BOUND 0.3l
-#define PLAYER_BOUND_SQRD (PLAYER_BOUND * PLAYER_BOUND)
-#define EPSILON 1e-4
-#define VERTICAL_TOLERANCE 1e-1
-#ifndef MAX_BLOCKS
-#define MAX_BLOCKS (CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT)
-#endif
+
 namespace Craft
 {
     Entity::Entity(
@@ -19,7 +13,7 @@ namespace Craft
             long double x, long double y, long double z,
             Coordinate2D<int> chunkPos,
             long double front, long double back, long double left, long double right,
-            std::unordered_map<Coordinate2D<int>, std::bitset<CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT>*>* coords
+            std::unordered_map<Coordinate2D<int>, std::unordered_map<Coordinate<int>, Block>*>* coords
     )
             : timer{timer}
             , coords{coords}
@@ -30,36 +24,7 @@ namespace Craft
             , originChunk{chunkPos.x, chunkPos.z}
     {}
 
-    blockInfo Entity::getBlockInfo(int blockX, int blockZ, Coordinate2D<int> chunkPos)
-    {
-        blockInfo info
-        {
-            blockX,
-            blockZ,
-            chunkPos
-        };
-        if (blockZ < 0)
-        {
-            info.blockZ += 16;
-            info.chunk.z -= 1;
-        }
-        if (blockZ > 15)
-        {
-            info.blockZ -= 16;
-            info.chunk.z += 1;
-        }
-        if (blockX < 0)
-        {
-            info.blockX += 16;
-            info.chunk.x -= 1;
-        }
-        if (blockX > 15)
-        {
-            info.blockX -= 16;
-            info.chunk.x += 1;
-        }
-        return info;
-    }
+
     bool Entity::blockBelowEntity(float angle) {
         int originBlockX = (int) round(entityX),
                 originBlockZ = (int) round(entityZ);
@@ -93,9 +58,8 @@ namespace Craft
         {
             for (Coordinate2D<int> coord: blocksToCheck)
             {
-                blockInfo info = getBlockInfo(coord.x, coord.z, originChunk);
-                int blockIdx = (blockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
-                if (blockIdx < CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT && blockIdx >= 0 && (*coords->at(info.chunk))[blockIdx])
+                BlockInfo info = getBlockInfo({coord.x, blockY, coord.z}, originChunk);
+                if ((*coords->at(info.chunk)).find(info.block) != (*coords->at(info.chunk)).end())
                 {
                     return true;
                 }
@@ -122,18 +86,17 @@ namespace Craft
                         }
                 };
         for (Coordinate2D<int> coord: blocksToCheck) {
-            blockInfo info = getBlockInfo(coord.x, coord.z, originChunk);
-            int blockIdx = (blockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
-            if (blockIdx < CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT && blockIdx >= 0 && (*coords->at(info.chunk))[blockIdx])
+            BlockInfo info = getBlockInfo({coord.x, blockY, coord.z}, originChunk);
+            if ((*coords->at(info.chunk)).find(info.block) != (*coords->at(info.chunk)).end())
             {
                 for (Coordinate2D<long double> entityCoord: entityBoundCoords)
                 {
                     // If Coordinate is within the blocks bounds, then return true.
                     if (
-                            entityCoord.x >= info.blockX &&
-                            entityCoord.x <= info.blockX + 1 &&
-                            entityCoord.z >= info.blockZ &&
-                            entityCoord.z <= info.blockZ + 1
+                            entityCoord.x >= info.block.x &&
+                            entityCoord.x <= info.block.x + 1 &&
+                            entityCoord.z >= info.block.z &&
+                            entityCoord.z <= info.block.z + 1
                             )
                     {
                         return true;
@@ -246,10 +209,10 @@ namespace Craft
         int topBlockY = (int) round(entityY) - 1;
         int bottomBlockY = topBlockY - 1;
 
-        blockInfo info = getBlockInfo(closestVertexX, closestVertexZ, originChunk);
+        BlockInfo info = getBlockInfo({closestVertexX, 0, closestVertexZ}, originChunk);
         // Blocks coordinates in world coordinates.
-        long double blockChunkWorldX = (info.chunk.x * 16) + info.blockX;
-        long double blockChunkWorldZ = (info.chunk.z * 16) + info.blockZ;
+        long double blockChunkWorldX = (info.chunk.x * 16) + info.block.x;
+        long double blockChunkWorldZ = (info.chunk.z * 16) + info.block.z;
         long double entityWorldX = getWorldX();
         long double entityWorldZ = getWorldZ();
 
@@ -304,14 +267,9 @@ namespace Craft
         {
             edgeCoordZ.z += 16;
         }
-        int topBlockIdx;
-        int bottomBlockIdx;
         for (Coordinate2D<int> block: blocksToCheck) {
             // Checking the blockToChecks vertex to see if it is within the players bounds.
-            info = getBlockInfo(block.x, block.z, originChunk);
-
-            topBlockIdx = (topBlockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
-            bottomBlockIdx = (bottomBlockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
+            info = getBlockInfo({block.x, (int) round(entityY) - 2, block.z}, originChunk);
 
             int blockOffsetPaddingZ = (xDirection == 1 && checkingLeft) ||
                                       (xDirection == -1 && !checkingLeft) ||
@@ -324,31 +282,33 @@ namespace Craft
                                       (zDirection == 1 && !checkingLeft) ||
                                       (zDirection == -1 && checkingLeft)
                                       ? 1 : 0;
+            Coordinate<int> topBlockCoord {info.block.x, topBlockY, info.block.z};
+            Coordinate<int> bottomBlockCoord {info.block.x, bottomBlockY, info.block.z};
             if (
-                    topBlockIdx >= 0 && topBlockIdx < MAX_BLOCKS && (*coords->at(info.chunk))[topBlockIdx] ||
-                    bottomBlockIdx >= 0 && bottomBlockIdx < MAX_BLOCKS && (*coords->at(info.chunk))[bottomBlockIdx]
-                    )
+                    (*coords->at(info.chunk)).find(topBlockCoord) != (*coords->at(info.chunk)).end() ||
+                    (*coords->at(info.chunk)).find(bottomBlockCoord) != (*coords->at(info.chunk)).end()
+                )
             {
                 // Check if x edge is within the block.
                 if (
                         correction.x == 0 &&
-                        edgeCoordX.x - EPSILON >= info.blockX &&
-                        edgeCoordX.x + EPSILON <= info.blockX + 1 &&
-                        edgeCoordX.z - EPSILON >= info.blockZ &&
-                        edgeCoordX.z + EPSILON <= info.blockZ + 1
+                        edgeCoordX.x - EPSILON >= info.block.x &&
+                        edgeCoordX.x + EPSILON <= info.block.x + 1 &&
+                        edgeCoordX.z - EPSILON >= info.block.z &&
+                        edgeCoordX.z + EPSILON <= info.block.z + 1
                         )
                 {
-                    correction.x -= edgeCoordX.x - (info.blockX + blockOffsetPaddingX);
+                    correction.x -= edgeCoordX.x - (info.block.x + blockOffsetPaddingX);
                 }
                 else if (
                         correction.z == 0 &&
-                        edgeCoordZ.x - EPSILON >= info.blockX &&
-                        edgeCoordZ.x + EPSILON <= info.blockX + 1 &&
-                        edgeCoordZ.z - EPSILON >= info.blockZ &&
-                        edgeCoordZ.z + EPSILON <= info.blockZ + 1
+                        edgeCoordZ.x - EPSILON >= info.block.x &&
+                        edgeCoordZ.x + EPSILON <= info.block.x + 1 &&
+                        edgeCoordZ.z - EPSILON >= info.block.z &&
+                        edgeCoordZ.z + EPSILON <= info.block.z + 1
                         )
                 {
-                    correction.z -= edgeCoordZ.z - (info.blockZ + blockOffsetPaddingZ);
+                    correction.z -= edgeCoordZ.z - (info.block.z + blockOffsetPaddingZ);
                 }
             }
         }
@@ -364,9 +324,9 @@ namespace Craft
         int bottomBlockY = topBlockY - 1;
 
         // Checking the blockToChecks vertex to see if it is within the players bounds.
-        blockInfo info = getBlockInfo(vertexXToCheck, vertexZToCheck, originChunk);
-        long double blockChunkWorldX = (info.chunk.x * 16) + info.blockX;
-        long double blockChunkWorldZ = (info.chunk.z * 16) + info.blockZ;
+        BlockInfo info = getBlockInfo({vertexXToCheck, 0, vertexZToCheck}, originChunk);
+        long double blockChunkWorldX = (info.chunk.x * 16) + info.block.x;
+        long double blockChunkWorldZ = (info.chunk.z * 16) + info.block.z;
         bool checkingFront = isCheckingFront(xDirection, zDirection, (int) blockChunkWorldX, (int) blockChunkWorldZ, getWorldX(), getWorldZ());
         bool checkingLeft = isCheckingLeft(xDirection, zDirection, (int) blockChunkWorldX, (int) blockChunkWorldZ, getWorldX(), getWorldZ());
 
@@ -394,12 +354,12 @@ namespace Craft
         {
             blockXToCheck -= 1;
         }
-        info = getBlockInfo(blockXToCheck, blockZToCheck, originChunk);
-        int topBlockIdx = (topBlockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
-        int bottomBlockIdx = (bottomBlockY * CHUNK_WIDTH * CHUNK_WIDTH) + (info.blockZ * CHUNK_WIDTH) + info.blockX;
+        info = getBlockInfo({blockXToCheck, (int) round(entityY) - 2, blockZToCheck}, originChunk);
+        Coordinate<int> topBlockCoord {info.block.x, topBlockY, info.block.z};
+        Coordinate<int> bottomBlockCoord {info.block.x, bottomBlockY, info.block.z};
         if (
-                (topBlockIdx >= 0 && topBlockIdx < MAX_BLOCKS && (*coords->at(info.chunk))[topBlockIdx]) ||
-                (bottomBlockIdx >= 0 && bottomBlockIdx < MAX_BLOCKS && (*coords->at(info.chunk))[bottomBlockIdx])
+                (*coords->at(info.chunk)).find(topBlockCoord) != (*coords->at(info.chunk)).end() ||
+                (*coords->at(info.chunk)).find(bottomBlockCoord) != (*coords->at(info.chunk)).end()
             )
         {
             return calculateCorrection(vertexXToCheck, vertexZToCheck, entityX, entityZ, xDirection, zDirection, checkingLeft, checkingFront);

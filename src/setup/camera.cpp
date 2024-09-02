@@ -19,8 +19,8 @@ namespace Engine
             Window* window,
             Engine::Program* program,
             Engine::Program* worldProgram,
-            unsigned int width,
-            unsigned int height,
+            uint32_t width,
+            uint32_t height,
             float x, float y, float z
     )
         : window(window)
@@ -71,7 +71,8 @@ namespace Engine
 
     void Camera::mouse_movement_callback(GLFWwindow* window, double xPos, double yPos)
     {
-        auto camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
+        auto userPointerData = static_cast<Craft::GLFWUserPointer*>(glfwGetWindowUserPointer(window));
+        Camera* camera = userPointerData->camera;
         if (Camera::firstMouse)
         {
             Camera::lastX = static_cast<float>(xPos);
@@ -110,8 +111,4 @@ namespace Engine
     {
         return cameraFront;
     }
-//    glm::vec3 Camera::getCameraUp()
-//    {
-//        return cameraUp;
-//    }
 }

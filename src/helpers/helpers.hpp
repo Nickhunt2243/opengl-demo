@@ -5,6 +5,9 @@
 #include <glm/glm.hpp>
 #include <unordered_map>
 #include <unordered_set>
+#include <stb/stb_image.h>
+#include <stb/stb_image_write.h>
+#include <iostream>
 
 #include "../craft/misc/types.hpp"
 
@@ -51,6 +54,14 @@ std::string getFileContents(const char* path);
  */
 ImageData* getImageContents(const std::string& texturePath);
 /**
+ * Simple function for saving an an array of rgb data as an image. Used mostly for debugging.
+ *
+ * @param rgbData: The array containing the data.
+ * @param width:   The width of the picture.
+ * @param height:  The height of the picture.
+ */
+void saveImageAsPNG(unsigned char* rgbData, int width, int height);
+/**
  * Retrieve whether the string s ends with the char sequence of ending.
  *
  * @param s:      The string to be checked.
@@ -91,6 +102,14 @@ void setFloat(GLuint program, const std::string &name, float value);
  */
 void setVec2(GLuint program, const std::string &name, glm::vec2 value);
 /**
+ * Set a 2x1 integer vector within the OpenGL program.
+ *
+ * @param program: The given OpenGL program identifier.
+ * @param name:    The name of the shader parameter.
+ * @param value:   The value to set.
+ */
+void setiVec2(GLuint program, const std::string &name, glm::vec2 value);
+/**
  * Set a 3x1 vector within the OpenGL program.
  *
  * @param program: The given OpenGL program identifier.
@@ -122,6 +141,20 @@ bool setMat4(GLuint program, const std::string &name, glm::mat4& value);
  * @param name: The Name/Desc of the matrix.
  */
 [[maybe_unused]] void printMatrix4x4(glm::mat4& mat, const std::string& name);
-
-
+/**
+ * Retrieve a given block's X, Z, and chunk coordinate normalized in 0-15 indexing.
+ *
+ * @param blockX:   The current block X value.
+ * @param blockZ:   The current block Z value.
+ * @param chunkPos: The current chunk position.
+ * @return:       A struct containing the blocks x, z, and chunk coordinate.
+ */
+Craft::BlockInfo getBlockInfo(Craft::Coordinate<int> block, Craft::Coordinate2D<int> chunkPos);
+/// Helper function for checking opengl errors.
+inline void checkOpenGLError(const std::string& location) {
+    GLenum error;
+    while ((error = glGetError()) != GL_NO_ERROR) {
+        std::cerr << "OpenGL Error " << error << " at " << location << std::endl;
+    }
+}
 #endif //OPENGLDEMO_HELPERS_HPP
