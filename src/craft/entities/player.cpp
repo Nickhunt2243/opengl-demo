@@ -7,7 +7,7 @@
 
 namespace Craft {
     long double playerInitialX = 13,
-                playerInitialY = 143l,
+                playerInitialY = 103l,
                 playerInitialZ = 10;
 
     Player::Player(
