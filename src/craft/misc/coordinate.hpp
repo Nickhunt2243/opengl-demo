@@ -42,6 +42,9 @@ namespace Craft
         operator glm::vec3() const {
             return {x, y, z};
         }
+        operator glm::ivec3() const {
+            return {(int) x, (int) y, (int) z};
+        }
         /**
          * The << operator for a 2D coordinate. Used for debugging purposes.
          *
@@ -162,7 +165,11 @@ namespace Craft
          * @return: A glm::vec2 representing the 2D coordinate.
          */
         operator glm::vec2() const {
-            return {x, z};
+            return {(float) x, (float) z};
+        }
+
+        operator glm::ivec2() const {
+            return {(int) x, (int) z};
         }
     };
 }

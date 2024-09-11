@@ -1,21 +1,50 @@
 #version 460 core
 
 layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-uniform int worldWidth;
-uniform int numChunks;
-uniform ivec2 minChunkCoords;
+uniform int u_WorldWidth;
+uniform int u_NumChunks;
+uniform int u_RenderDistance;
 
 const int CHUNK_WIDTH = 16;
 const int CHUNK_HEIGHT = 256;
+
+struct blockV{
+    int data;
+//    int chunkPosX;
+//    int chunkPosZ;
+//    int chunkIdx;
+//    float blockX;
+//    float blockZ;
+//    float blockY;
+////    float relBlockX;
+////    float relBlockZ;
+////    float relBlockY;
+//    int chunkIdxX;
+//    int chunkIdxZ;
+//    int u_RenderDistance;
+//    int u_NumChunks;
+};
 
 struct ChunkInfo
 {
     int blockVisibility[CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH];
 };
 // A buffer that will be updated when the blocks in game are updated
-layout (std430, binding = 0) buffer blockInformationBuffer {
+layout (std430, binding = 0) buffer blockInformationBuffer
+{
     ChunkInfo chunkInfo[];
 };
+int findChunkIdx(int coord)
+{
+    if ((coord + u_RenderDistance) < 0)
+    {
+        return ((((((coord + u_RenderDistance) * -1) % u_NumChunks) * -1) + u_NumChunks) % u_NumChunks);
+    }
+    else
+    {
+        return (((coord + u_RenderDistance) % u_NumChunks) + u_NumChunks) % u_NumChunks;
+    }
+}
 struct BlockInfo
 {
     int chunkIdx;
@@ -24,8 +53,13 @@ struct BlockInfo
 BlockInfo getBlockInfoIdx(ivec3 blockPos)
 {
     BlockInfo info;
-    info.chunkIdx = (((blockPos.x / 16) - minChunkCoords.x) * numChunks) + ((blockPos.z / 16) - minChunkCoords.y);
-    info.blockIdx = (blockPos.y * CHUNK_WIDTH * CHUNK_WIDTH) + ((blockPos.z % 16) * CHUNK_WIDTH) + (blockPos.x % 16);
+    ivec2 chunkPos = ivec2(int(floor(blockPos.x / 16.0)), int(floor(blockPos.z / 16.0)));
+    ivec3 blockChunkRelPos = ivec3(blockPos.x - (chunkPos.x * 16), blockPos.y, (blockPos.z - (chunkPos.y * 16)));
+
+    int chunkIdxX = findChunkIdx(chunkPos.x);
+    int chunkIdxZ = findChunkIdx(chunkPos.y);
+    info.chunkIdx = (chunkIdxX * u_NumChunks) + chunkIdxZ;
+    info.blockIdx = (blockChunkRelPos.y * CHUNK_HEIGHT) + (blockChunkRelPos.z * CHUNK_WIDTH) + (blockChunkRelPos.x);
 
     return info;
 }
@@ -40,31 +74,30 @@ bool getBlockExists(ivec3 blockPos)
 void main()
 {
     // Retrieve block position.
-    ivec3 blockPos = ivec3(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y, gl_GlobalInvocationID.z);
+    ivec3 blockPos = ivec3(gl_GlobalInvocationID.xyz);
     // Get information about the current block.
     BlockInfo idxs = getBlockInfoIdx(blockPos);
     // Getting the byte that holds the infomation on the given block. See src/craft/misc/types.hpp for more details.
-    int currNeighbor = chunkInfo[idxs.chunkIdx].blockVisibility[idxs.blockIdx];
 
-    // If the block doesn't exist then we will skip.
-    if ((chunkInfo[idxs.chunkIdx].blockVisibility[idxs.blockIdx] & 1) != 1) return;
+//     If the block doesn't exist then we will skip.
+    if (!getBlockExists(blockPos)) return;
 
     // Retrieve whether we should draw the given sides.
     int newResult = 1;
-    bool draw_y_max = (blockPos.y != CHUNK_HEIGHT - 1) && getBlockExists(blockPos + ivec3(0, 1, 0));
-    bool draw_y_min = (blockPos.y != 0) && getBlockExists(blockPos + ivec3(0, -1, 0));
-    bool draw_x_max = (blockPos.x != worldWidth - 1) && getBlockExists(blockPos + ivec3(1, 0, 0));
-    bool draw_x_min = (blockPos.x != 0) && getBlockExists(blockPos + ivec3(-1, 0, 0));
-    bool draw_z_max = (blockPos.z != worldWidth - 1) && getBlockExists(blockPos + ivec3(0, 0, 1));
-    bool draw_z_min = (blockPos.z != 0) && getBlockExists(blockPos + ivec3(0, 0, -1));
+    bool draw_y_max = (blockPos.y == CHUNK_HEIGHT - 1) || !getBlockExists(blockPos + ivec3(0, 1, 0));
+    bool draw_y_min = (blockPos.y == 0) || !getBlockExists(blockPos + ivec3(0, -1, 0));
+    bool draw_x_max = (blockPos.x == u_WorldWidth - 1) || !getBlockExists(blockPos + ivec3(1, 0, 0));
+    bool draw_x_min = (blockPos.x == 0) || !getBlockExists(blockPos + ivec3(-1, 0, 0));
+    bool draw_z_max = (blockPos.z == u_WorldWidth - 1) || !getBlockExists(blockPos + ivec3(0, 0, 1));
+    bool draw_z_min = (blockPos.z == 0) || !getBlockExists(blockPos + ivec3(0, 0, -1));
 
     // If block does exist or were out of bounds then we draw.
-    newResult += (!draw_y_max ? 2 : 0);  // bit 2 pertains to y_max
-    newResult += (!draw_y_min ? 4 : 0);  // bit 3 pertains to y_min
-    newResult += (!draw_x_max ? 8 : 0);  // bit 4 pertains to x_max
-    newResult += (!draw_x_min ? 16 : 0); // bit 5 pertains to x_min
-    newResult += (!draw_z_max ? 32 : 0); // bit 6 pertains to z_max
-    newResult += (!draw_z_min ? 64 : 0); // bit 7 pertains to z_min
+    newResult += (draw_y_max ? 2 : 0);  // bit 2 pertains to y_max
+    newResult += (draw_y_min ? 4 : 0);  // bit 3 pertains to y_min
+    newResult += (draw_x_max ? 8 : 0);  // bit 4 pertains to x_max
+    newResult += (draw_x_min ? 16 : 0); // bit 5 pertains to x_min
+    newResult += (draw_z_max ? 32 : 0); // bit 6 pertains to z_max
+    newResult += (draw_z_min ? 64 : 0); // bit 7 pertains to z_min
 
     // Safely set the block info using atomic operations
     chunkInfo[idxs.chunkIdx].blockVisibility[idxs.blockIdx] = newResult;

@@ -29,11 +29,20 @@ struct ImageData {
 /**
  * A struct to hold information on an images texture
  */
-struct ImageLoadResult {
+struct ImageLoadResult
+{
     /// The layer of the texture in the Sampler2DArray.
     GLuint layer;
     /// A mapping of block type to the faces the texture should be used with.
     std::unordered_map<std::string, std::vector<std::string>> blockTypeToFaces;
+    /// A struct containing the ImageData.
+    ImageData *imageData;
+};
+struct ColorMapLoadResults
+{
+    /// The layer of the texture in the Sampler2DArray.
+    GLuint layer;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::vector<std::string>>> blockTypeToFacesAndUVs;
     /// A struct containing the ImageData.
     ImageData *imageData;
 };
@@ -108,7 +117,7 @@ void setVec2(GLuint program, const std::string &name, glm::vec2 value);
  * @param name:    The name of the shader parameter.
  * @param value:   The value to set.
  */
-void setiVec2(GLuint program, const std::string &name, glm::vec2 value);
+void setiVec2(GLuint program, const std::string &name, glm::ivec2 value);
 /**
  * Set a 3x1 vector within the OpenGL program.
  *
@@ -117,6 +126,14 @@ void setiVec2(GLuint program, const std::string &name, glm::vec2 value);
  * @param value:   The value to set.
  */
 void setVec3(GLuint program, const std::string &name, glm::vec3 value);
+/**
+ * Set a 3x1 integer vector within the OpenGL program.
+ *
+ * @param program: The given OpenGL program identifier.
+ * @param name:    The name of the shader parameter.
+ * @param value:   The value to set.
+ */
+void setiVec3(GLuint program, const std::string &name, glm::ivec3 value);
 /**
  * Set a 4x1 vector within the OpenGL program.
  *

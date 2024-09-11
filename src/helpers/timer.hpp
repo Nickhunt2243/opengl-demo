@@ -28,6 +28,7 @@ namespace Engine
         void incFrames();
         /// Reset the time and frames.
         void resetTimer();
+        int getFrames();
     private:
         /// The startTime of the given timer. Only set on initialization and when resetTimer is called.
         std::chrono::steady_clock::time_point startTime{std::chrono::steady_clock::now()};

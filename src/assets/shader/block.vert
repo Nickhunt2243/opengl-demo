@@ -1,74 +1,63 @@
 #version 460 core
 
-layout(location = 0) in int blockData;
-layout(location = 1) in int colorMappingData;
+layout(location = 0) in float blockData;
+layout(location = 1) in float blockX;
+layout(location = 2) in float blockZ;
 
-// 4 Bytes of block Data (7 bits free. Most likely will need them for textures)
-// 5 bits of x data
-int x = blockData & 31;
-// 5 bits of z data
-int z = (blockData >> 5) & 31;
-// 8 bits of y data
-int y = (blockData >> 10) & 255;
-// 3 bits of texture data
-int a_tex = (blockData >> 18) & 7;
-// 2 bits of uv data
-vec2 a_uv = vec2(
-    (blockData >> 21) & 1,
-    (blockData >> 22) & 1
-);
-// 3 bits of normal data
-int normalType = (blockData >> 23) & 7; // 3 bits
-int lightScalar = (blockData >> 26) & 15; // 4 bits
-
-
-vec4 a_colorMap = vec4(
-    (colorMappingData & 255) / 255.0, // Normalize to [0, 1]
-    ((colorMappingData >> 8) & 255) / 255.0,
-    ((colorMappingData >> 16) & 255) / 255.0,
-    ((colorMappingData >> 24) & 255) / 255.0
-);
-
-uniform vec2 u_ChunkPos;
-uniform mat4 u_projT;
-uniform mat4 u_viewT;
 uniform float u_DefaultLightLevel;
+uniform int u_NumChunks;
+uniform int u_RenderDistance;
 
-out vec2 texCoords;
-out int currTex;
-out flat vec4 colorMap;
-out vec3 a_blockPos;
-out vec2 a_chunkPos;
-out flat vec3 a_norm;
+const int CHUNK_WIDTH = 16;
+const int CHUNK_HEIGHT = 256;
+//
+//int worldWidth = CHUNK_WIDTH * u_NumChunks;
+
+// Getting blockX by dividint the instance ID by number of blocks in a slice of the worlds z and y axis
+//float blockY = gl_InstanceID / (worldWidth * worldWidth);
+//float blockZ = (blockY - floor(blockY)) * worldWidth;
+//float blockX = (blockZ - floor(blockZ)) * worldWidth;
+
+int blockDataInt = int(blockData);
+
+// 8 bits of y data
+float blockY = blockDataInt & 255;
+// 3 bits of texture data with 6 diff textures
+int yMaxTexture = (blockDataInt >> 8) & 7;
+int yMinTexture = (blockDataInt >> 11) & 7;
+int xMaxTexture = (blockDataInt >> 14) & 7;
+int xMinTexture = (blockDataInt >> 17) & 7;
+int zMaxTexture = (blockDataInt >> 20) & 7;
+int zMinTexture = (blockDataInt >> 23) & 7;
+
+ivec2 chunkPos = ivec2(int(floor(blockX / 16.0)), int(floor(blockZ / 16.0)));
+ivec3 blockChunkRelPos = ivec3(int(blockX) - (chunkPos.x * 16), blockY, int(blockZ) - (chunkPos.y * 16));
+
+out ivec3 a_blockPos;
+out ivec2 a_chunkPos;
 out flat float a_colorScalar;
-
-vec4 newPos = vec4(
-    x + u_ChunkPos.x,
-    y,
-    z + u_ChunkPos.y,
-    1.0
-);
-
-vec3[] normals = {
-    {0.0, 1.0, 0.0},
-    {0.0, -1.0, 0.0},
-    {0.0, 0.0, -1.0},
-    {1.0, 0.0, 0.0},
-    {0.0, 0.0, 1.0},
-    {-1.0, 0.0, 0.0}
-};
-
+out int a_yMaxTexture;
+out int a_yMinTexture;
+out int a_xMaxTexture;
+out int a_xMinTexture;
+out int a_zMaxTexture;
+out int a_zMinTexture;
 
 void main()
 {
-
-    gl_Position = u_projT * u_viewT * newPos;
-    a_chunkPos = vec2(x, z);
-    a_blockPos = newPos.xyz;
-    float lightLevel = clamp(u_DefaultLightLevel - lightScalar, 0, 15);
+    // Transformed position data
+    gl_Position = vec4(blockX, blockY, blockZ, 1.0);
+    // Game Chunk position Data
+    a_blockPos = blockChunkRelPos;
+    a_chunkPos = chunkPos;
+    // Light Data
+    float lightLevel = clamp(u_DefaultLightLevel, 0, 15);
     a_colorScalar = (0.6 * lightLevel / 15) + 0.4;
-    texCoords = a_uv;
-    currTex = a_tex;
-    colorMap = a_colorMap;
-    a_norm = normals[normalType];
+    // Texture Data
+    a_yMaxTexture = yMaxTexture;
+    a_yMinTexture = yMinTexture;
+    a_xMaxTexture = xMaxTexture;
+    a_xMinTexture = xMinTexture;
+    a_zMaxTexture = zMaxTexture;
+    a_zMinTexture = zMinTexture;
 }

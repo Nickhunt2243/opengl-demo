@@ -49,18 +49,12 @@ namespace Craft
             BlockType blockType,
             const std::string& blockFace,
             GLuint texLayer,
-            std::unordered_map<BlockType, blockTexture>& textureMapping
+            std::unordered_map<BlockType, BlockTexture>& textureMapping
         )
     {
-        glm::vec4 colorMapping{255, 255, 255, 0};
-        if (blockType == BlockType::GRASS && blockFace == "top")
-        {
-            // Green color mapping for grass block top.
-            colorMapping = glm::vec4(129, 226, 64, 204);
-        }
-        auto data = new textureData{texLayer, colorMapping};
+        auto data = new textureData{texLayer};
         std::lock_guard<std::mutex> lock(mutex);
-        blockTexture& bt = textureMapping[blockType];
+        BlockTexture& bt = textureMapping[blockType];
         if (blockFace == "top") bt.top = data;
         else if (blockFace == "bottom") bt.bottom = data;
         else if (blockFace == "front") bt.front = data;
@@ -86,27 +80,13 @@ namespace Craft
         {
             const std::string& filepath = iter.key();
             json textureInfo = textureMappingJSON[filepath];
-            threads.emplace_back([&, filepath, textureInfo]()
-                {
-                    readImages(loadResults, textureInfo, filepath);
-                }
-            );
-        }
-        // Start reading threads
-        for (auto& thread : threads)
-        {
-            if (thread.joinable())
-            {
-                thread.join();
-            }
+            readImages(loadResults, textureInfo, filepath);
         }
 
         glUseProgram(program);
         GLuint tex = initTextureFromData(loadResults);
         std::cout << "Initialized Textures" << std::endl;
         glUniform1i(glGetUniformLocation(program, "textures"), 1);
-        // Clearing threads.
-        threads.clear();
         /// Iterate through Textures
         for (const auto& result: loadResults)
         {
@@ -118,21 +98,11 @@ namespace Craft
                 // Iterate through block faces.
                 for (const auto& blockFace: info.second)
                 {
-                    threads.emplace_back([&, texLayer, blockType, blockFace]()
-                        {
-                            constructTexture(stringToBlockType[blockType], blockFace, texLayer, textureMapping);
-                        }
-                    );
-                }
-            }
-            for (auto& thread : threads)
-            {
-                if (thread.joinable())
-                {
-                    thread.join();
+                    constructTexture(stringToBlockType[blockType], blockFace, texLayer, textureMapping);
                 }
             }
         }
+
         return true;
     }
     GLuint Textures::initTextureFromData(std::unordered_map<std::string, ImageLoadResult>& imageResults)

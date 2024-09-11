@@ -11,38 +11,21 @@
 
 namespace Craft
 {
-    Textures* Chunk::textures = nullptr;
-
     Chunk::Chunk(
             Engine::Program* blockProgram,
             int x, int z,
             std::unordered_map<Coordinate2D<int>, std::unordered_map<Coordinate<int>, Block>*>* coords,
-            std::mutex* coordsMutex
+            std::mutex* coordsMutex, GLuint VBO
     )
         : blockProgram{blockProgram}
         , coords{coords}
         , chunkPos(x, z)
         , coordsMutex{coordsMutex}
+        , VBO{VBO}
     {};
-    Chunk::~Chunk()
+    void Chunk::initChunk(NeighborInfo* visibility)
     {
-        blockProgram->useProgram();
-        delete[] vertexBufferData;
-        delete[] elementBuffer;
-        {
-            std::lock_guard<std::mutex> lock(*coordsMutex);
-            coords->erase(chunkPos);
-        }
-        if (EBO != 0 && VBO != 0 && VAO != 0)
-        {
-            glDeleteBuffers(1, &(EBO));
-            glDeleteBuffers(1, &(VBO));
-            glDeleteVertexArrays(1, &(VAO));
-        }
-    }
-
-    void Chunk::initChunk(NeighborInfo* visibility) {
-        BlockType blockType = BlockType::GRASS;
+        BlockType blockType;
 
         std::mt19937 gen(44); // Mersenne Twister generator
         // Create a distribution for integers in the range [min, max]
@@ -114,16 +97,6 @@ namespace Craft
             coords->insert({chunkPos, &blocksMap});
         }
     }
-    void Chunk::initVisibility(NeighborInfo* visibility)
-    {
-        int idx = 0;
-        for (auto blockInfo: blocksMap)
-        {
-            idx = (blockInfo.first.y * CHUNK_SIZE) + (blockInfo.first.z * CHUNK_WIDTH) + (blockInfo.first.x);
-            visibility[idx].data = 1;
-        }
-    }
-
     void Chunk::deleteBlock(Coordinate<int> blockPos, NeighborInfo* visibility)
     {
         // Delete the block from the blocksMap hashmap
@@ -132,9 +105,7 @@ namespace Craft
             return;
         }
         blocksMap.erase(blockPos);
-
         int idx = (blockPos.y * CHUNK_SIZE) + (blockPos.z * CHUNK_WIDTH) + blockPos.x;
-
         visibility[idx].setNeighbor(0);
     }
     void Chunk::createBlock(Coordinate<int> blockPos, NeighborInfo* visibility)
@@ -165,113 +136,32 @@ namespace Craft
 
         visibility[idx].setNeighbor(neighborInfo);
     }
-    void Chunk::initElementBuffer(NeighborInfo* visibility)
+    void Chunk::initBufferData(Textures* textures, int chunkIdx)
     {
-        std::lock_guard<std::mutex> lock(blocksMutex);
-        elementCount = 0;
-        for (auto blockData: blocksMap)
-        {
-            Coordinate<int> relCoord = blockData.first;
-            int idx = (relCoord.y * CHUNK_SIZE) + (relCoord.z * CHUNK_WIDTH) + (relCoord.x);
-            int currSize = visibility[idx].sum() * 6;
-
-            elementCount += currSize;
-        }
-
-        delete[] elementBuffer;
-        elementBuffer = new uint32_t[elementCount];
-
-        int eIdx = 0,
-            currBlocksVerticesIdx = 0;
-        for (auto blockData: blocksMap)
-        {
-            Coordinate<int> relCoord = blockData.first;
-            int idx = (relCoord.y * CHUNK_SIZE) + (relCoord.z * CHUNK_WIDTH) + relCoord.x;
-            NeighborInfo info = visibility[idx];
-            fillElementBufferData(elementBuffer, eIdx, currBlocksVerticesIdx, info);
-            currBlocksVerticesIdx += 6 * 4;
-            eIdx += info.sum() * 6;
-        }
-        needToInitElements = true;
-    }
-    void Chunk::initBufferData()
-    {
-        std::lock_guard<std::mutex> lock(blocksMutex);
-        vboSize = (int) blocksMap.size() * getVerticesCount();
-        delete[] vertexBufferData;
-        vertexBufferData = new int[vboSize];
-        int vIdx = 0;
-        for (auto blockData: blocksMap)
-        {
-            fillVerticesBufferData(blockData.first, blockData.second, vertexBufferData, vIdx, textures->textureMapping[blockData.second.type]);
-            vIdx += getVerticesCount();
-        }
-        isReadyToInitVAO = true;
-    }
-    void Chunk::initEBO()
-    {
-        if (EBO == 0)
-            glGenBuffers(1, &EBO);
-        // Initialize the element buffer.
-        glBindVertexArray(VAO);
-        // Bind and initialize EBO
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        auto indexSize = (GLsizeiptr) (elementCount * sizeof(GLuint));
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexSize, elementBuffer, GL_STATIC_DRAW);
-        glBindVertexArray(0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        // We need VAO (and VBO by default) to be initialized prior to calling initEBO so after this we can draw.
-        needToInitElements = false;
-        canDrawChunk = true;
-    }
-    void Chunk::initVAO()
-    {
-        // Init VAO and VBO
-        if (VAO == 0)
-            glGenVertexArrays(1, &VAO);
-        if (VBO == 0)
-            glGenBuffers(1, &VBO);
-
-        // Bind VAO
-        glBindVertexArray(VAO);
-        // Bind and initialize the VBO
-        // Per vertex data
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        auto size = (GLsizeiptr) (vboSize * sizeof(int));
-        glBufferData(GL_ARRAY_BUFFER, size, vertexBufferData, GL_STATIC_DRAW);
-        GLsizei stride =  (2) * sizeof(int);
+        auto chunkByteOffset = (GLsizei) (BLOCKS_IN_CHUNK * sizeof(BlockVertexData));
+        GLsizei chunkVBOIdx = chunkIdx * chunkByteOffset;
 
-        glVertexAttribIPointer(0, 1, GL_INT, stride, nullptr);
-        glEnableVertexAttribArray(0);
-        glVertexAttribIPointer(1, 1, GL_INT, stride, (void*) (1 * sizeof(int)));
-        glEnableVertexAttribArray(1);
-
-        glBindVertexArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    }
-    void Chunk::drawChunk(Time gameTime)
-    {
-        blockProgram->useProgram();
-        if (isReadyToInitVAO)
+        auto blockData = (BlockVertexData*) glMapBufferRange(GL_ARRAY_BUFFER, chunkVBOIdx, chunkByteOffset, GL_MAP_WRITE_BIT);
+        // Reset the blockData.
+        if (blockData == nullptr)
         {
-            initVAO();
+            std::cerr << "Failed to retrieve Buffer Data." << std::endl;
+            return;
         }
-        if (VAO != 0 && needToInitElements) {
-            initEBO();
-        }
-        if (canDrawChunk) {
-            glBindVertexArray(VAO);
-            float x = ((float) gameTime.hours * M_PI / 12) + M_PI;
-            float cosX = cos(x);
+        // Reset this range to 0 prior to writing to it.
+        memset(blockData, 0, chunkByteOffset);
+        vboSize = (int) blocksMap.size();
 
-            float newLightLevelEq1 = 7 * cosX + 5;
-            float newLightLevelEq2 = 4 * abs(cosX);
-
-            setFloat(blockProgram->getProgram(), "u_DefaultLightLevel", newLightLevelEq1 + newLightLevelEq2);
-            setVec2(blockProgram->getProgram(), "u_ChunkPos", chunkPos * 16);
-            glDrawElements(GL_TRIANGLES, (GLint) elementCount, GL_UNSIGNED_INT, nullptr);
-            glBindVertexArray(0);
+        int vIdx = 0;
+        BlockTexture texture{};
+        Coordinate<int> blockWorldCoord{chunkPos.x * 16, 0, chunkPos.z * 16};
+        for (auto block: blocksMap)
+        {
+            texture = textures->textureMapping.at(block.second.type);
+            appendAllCoordInfo(blockData[vIdx], {blockWorldCoord.x + block.first.x, block.first.y, blockWorldCoord.z + block.first.z}, texture);
+            vIdx++;
         }
+        glUnmapBuffer(GL_ARRAY_BUFFER);
     }
 }

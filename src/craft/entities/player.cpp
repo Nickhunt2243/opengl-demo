@@ -7,7 +7,7 @@
 
 namespace Craft {
     long double playerInitialX = 13,
-                playerInitialY = 103l,
+                playerInitialY = 110l,
                 playerInitialZ = 10;
 
     Player::Player(
@@ -29,7 +29,7 @@ namespace Craft {
             {
                     timer,
                     playerInitialX, playerInitialY, playerInitialZ,
-                    Coordinate2D<int>{0, 0},
+                    Coordinate2D<int>{-1, 0},
                     PLAYER_FRONT_BOUND, PLAYER_BACK_BOUND, PLAYER_LEFT_BOUND, PLAYER_RIGHT_BOUND,
                     coords
             }
@@ -113,6 +113,7 @@ namespace Craft {
     }
     Coordinate2D<int> Player::updatePlayer()
     {
+//        std::cout << Coordinate<int>{(int) entityX + (originChunk.x * 16), (int) entityY - 2, (int) entityZ + (originChunk.z * 16)} << std::endl;
         glm::vec3 cameraPos = glm::vec3{entityX + (originChunk.x * 16), entityY, entityZ + (originChunk.z * 16)};
         glm::vec3 cameraFront = camera.getCameraFront();
 
@@ -273,7 +274,7 @@ namespace Craft {
         blockProgram->useProgram();
         if (lookAtBlock != nullptr)
         {
-            setVec3(blockProgram->getProgram(), "u_lookAtBlock", *lookAtBlock);
+            setiVec3(blockProgram->getProgram(), "u_lookAtBlock", *lookAtBlock);
             setBool(blockProgram->getProgram(), "u_hasLookAt", true);
         }
         else

@@ -4,6 +4,7 @@
 
 #include "app.hpp"
 #include "../craft/misc/textures.hpp"
+#include "../craft/misc/coordinate.hpp"
 
 #define WINDOW_WIDTH 1500
 #define WINDOW_HEIGHT 1000
@@ -94,6 +95,35 @@ namespace Engine
     }
     bool Application::initialize()
     {
+//        std::unordered_set<int> visited{};
+//        int worldWidth = 48;
+//        double worldWidthd = 48.0;
+//        for (int x=0; x<worldWidth; x++)
+//        {
+//            for (int z=0; z<worldWidth; z++)
+//            {
+//                for (int y=0; y<256; y++)
+//                {
+//                    int blockIdx = (y * worldWidth * worldWidth) + (z * worldWidth) + (x);
+//                    if (visited.find(blockIdx) != visited.end())
+//                    {
+//                        std::cerr << "Found Dupe: " << Craft::Coordinate<int>{x, y, z} << ", idx: " << blockIdx << std::endl;
+//                    }
+//                    visited.insert(blockIdx);
+//                    long double revY = (double) blockIdx / (worldWidthd * worldWidthd);
+//                    long double revZ = (revY - floor(revY)) * worldWidthd;
+//                    long double revX = (revZ - floor(revZ)) * worldWidthd;
+//
+//                    if ((int) floor(revX) != x || (int) floor(revY) != y || (int) floor(revZ) != z)
+//                    {
+//                        std::cerr << "Reversed coords incorrect: " << Craft::Coordinate<int>{x, y, z} << ", idx: " << blockIdx << ", rev: " << Craft::Coordinate<int>{(int) revX, (int) revX, (int) revX} << std::endl;
+//                        return false;
+//                    }
+//                }
+//            }
+//        }
+
+
         std::cout << "Initializing Window." << std::endl;
         if (!window.initWindow())
         {

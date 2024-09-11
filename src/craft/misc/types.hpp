@@ -1,7 +1,3 @@
-//
-// Created by admin on 5/27/2024.
-//
-
 #ifndef OPENGLDEMO_TYPES_HPP
 #define OPENGLDEMO_TYPES_HPP
 
@@ -25,8 +21,6 @@ namespace Craft
     struct textureData {
         /// The layer of the texture in the sampler2DArray
         GLuint layer;
-        /// The color mapping of the texture.
-        glm::vec4 colorMapping;
         ~textureData() {
             glDeleteTextures(1, &layer);
         }
@@ -34,6 +28,7 @@ namespace Craft
 
     /// A struct holding relevant block info for x/z block collision.
     struct BlockInfo {
+        BlockInfo(Coordinate<int> blockPos, Coordinate2D<int> chunkPos): block{blockPos}, chunk{chunkPos} {}
         Coordinate<int> block;
         Coordinate2D<int> chunk;
     };
@@ -49,13 +44,27 @@ namespace Craft
     };
 
     /// A struct containing all the information of the block's textures.
-    struct blockTexture {
+    struct BlockTexture {
         textureData *top;
         textureData *bottom;
         textureData *front;
         textureData *right;
         textureData *back;
         textureData *left;
+
+        textureData* operator [](int index) const
+        {
+            switch (index)
+            {
+                case 0: return top;
+                case 1: return bottom;
+                case 2: return front;
+                case 3: return right;
+                case 4: return back;
+                case 5: return left;
+                default: return top;
+            }
+        }
     };
     /**
      * A struct for accessing specific bits within a byte (unsigned char).
@@ -82,7 +91,7 @@ namespace Craft
                 byte &= ~(1 << bitIndex);
             return *this;
         }
-    }
+    };
     /**
      * A struct for holding an entire rows (16 blocks/bytes) neighbor information.
      *
@@ -94,6 +103,20 @@ namespace Craft
     struct NeighborInfo
     {
         int data;
+//        int chunkPosX;
+//        int chunkPosZ;
+//        int chunkIdx;
+//        float blockX;
+//        float blockZ;
+//        float blockY;
+////        float relBlockX;
+////        float relBlockZ;
+////        float relBlockY;
+//        int chunkIdxX;
+//        int chunkIdxZ;
+//        int u_RenderDistance;
+//        int u_NumChunks;
+
 
         void setNeighbor(int value)
         {
