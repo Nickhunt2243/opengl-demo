@@ -102,42 +102,36 @@ namespace Craft
      */
     struct NeighborInfo
     {
-        int data;
-//        int chunkPosX;
-//        int chunkPosZ;
-//        int chunkIdx;
-//        float blockX;
-//        float blockZ;
-//        float blockY;
-////        float relBlockX;
-////        float relBlockZ;
-////        float relBlockY;
-//        int chunkIdxX;
-//        int chunkIdxZ;
-//        int u_RenderDistance;
-//        int u_NumChunks;
-
+//        int blockPosData; // Contains the x, y, z
+        int sideData; // Holds information for block neighbors, and textures
+//        int chunkX;
+//        int chunkZ;
+//        int chunkNum;
+//        int blockX;
+//        int blockY;
+//        int blockZ;
+//        int instanceID;
 
         void setNeighbor(int value)
         {
-            data = (int) value;
+            sideData = (int) value;
         }
-        ByteProxy block() { return {data, 0}; }
-        bool blockExists() const {return (data & 1) == 1; }
-        ByteProxy y_max() { return {data, 1}; }
-        ByteProxy y_min() { return {data, 2}; }
-        ByteProxy x_max() { return {data, 3}; }
-        ByteProxy x_min() { return {data, 4}; }
-        ByteProxy z_max() { return {data, 5}; }
-        ByteProxy z_min() { return {data, 6}; }
+        ByteProxy block() { return {sideData, 0}; }
+        bool blockExists() const {return (sideData & 1) == 1; }
+        ByteProxy y_max() { return {sideData, 1}; }
+        ByteProxy y_min() { return {sideData, 2}; }
+        ByteProxy x_max() { return {sideData, 3}; }
+        ByteProxy x_min() { return {sideData, 4}; }
+        ByteProxy z_max() { return {sideData, 5}; }
+        ByteProxy z_min() { return {sideData, 6}; }
         ByteProxy operator [](int index)
         {
-            return {data, index};
+            return {sideData, index};
         }
         [[nodiscard]] int sum() const {
-            return ((data >> 1) & 1) + ((data >> 2) & 1) +
-                   ((data >> 3) & 1) + ((data >> 4) & 1) +
-                   ((data >> 5) & 1) + ((data >> 6) & 1);
+            return ((sideData >> 1) & 1) + ((sideData >> 2) & 1) +
+                   ((sideData >> 3) & 1) + ((sideData >> 4) & 1) +
+                   ((sideData >> 5) & 1) + ((sideData >> 6) & 1);
         }
 
     };
@@ -151,10 +145,10 @@ namespace Craft
      *
      * NeighborInfo blockNeighborInfo = blockVisibility[rowNeighborIdx][blockIdx];
      */
-    struct ChunkInfoSSBO
+    typedef struct
     {
         NeighborInfo blockVisibility[CHUNK_WIDTH * CHUNK_HEIGHT * 16];
-    };
+    } ChunkInfoSSBO;
     /**
      * A enum class of types of block's.
      */

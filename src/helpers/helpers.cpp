@@ -179,3 +179,12 @@ Craft::BlockInfo getBlockInfo(Craft::Coordinate<int> block, Craft::Coordinate2D<
     }
     return info;
 }
+bool blockExists(
+        Craft::BlockInfo info,
+        std::unordered_map<Craft::Coordinate2D<int>, std::unordered_map<Craft::Coordinate<int>, Craft::Block>*>* coords
+    )
+{
+    auto chunkIter = coords->find(info.chunk);
+    if (chunkIter == coords->end()) return false;
+    return chunkIter->second->find(info.block) != chunkIter->second->end();
+}

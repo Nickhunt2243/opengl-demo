@@ -30,45 +30,41 @@ namespace Craft
 
         return {blockRelPos, chunkPos};
     }
-    std::unordered_set<Coordinate2D<int>> World::updateNeighbors(
-            Coordinate<int> blockPos,
-            Coordinate2D<int> chunkPos,
-            ChunkInfoSSBO* chunkInfoSSBO,
-            bool drawBlock
-        )
-    {
-        std::unordered_set<Coordinate2D<int>> chunksToUpdate{};
-        // Construct neighbor info:
-        std::vector<Coordinate<int>> blockOffsets = {
-                {0, -1, 0},
-                {0, 1, 0},
-                {-1, 0, 0},
-                {1, 0, 0},
-                {0, 0, -1},
-                {0, 0, 1}
-        };
-        int sideIdx =0;
-        for (auto coordOffset: blockOffsets)
-        {
-            sideIdx++;
-            BlockInfo info = getBlockInfo((Coordinate<int>{blockPos.x, blockPos.y, blockPos.z} + coordOffset), chunkPos);
-            chunksToUpdate.insert(info.chunk);
-            int chunkIdxX = (((info.chunk.x + RENDER_DISTANCE) % TOTAL_CHUNK_WIDTH) + TOTAL_CHUNK_WIDTH) % TOTAL_CHUNK_WIDTH;
-            int chunkIdxZ = (((info.chunk.z + RENDER_DISTANCE) % TOTAL_CHUNK_WIDTH) + TOTAL_CHUNK_WIDTH) % TOTAL_CHUNK_WIDTH;
-
-            int chunkIdx = (chunkIdxX * TOTAL_CHUNK_WIDTH) + chunkIdxZ;
-            int blockIdx = (info.block.y * CHUNK_SIZE) + (info.block.z * CHUNK_WIDTH) + info.block.x;
-            NeighborInfo neighbor = chunkInfoSSBO[chunkIdx].blockVisibility[blockIdx];
-            if (!neighbor.blockExists())
-            {
-                continue;
-            }
-            neighbor[sideIdx] = drawBlock;
-            chunkInfoSSBO[chunkIdx].blockVisibility[blockIdx] = neighbor;
-        }
-
-        return chunksToUpdate;
-    }
+//    void World::updateNeighbors(
+//            Coordinate<int> blockPos,
+//            Coordinate2D<int> chunkPos,
+//            bool drawBlock
+//        )
+//    {
+////        std::unordered_set<BlockInfo> chunksToUpdate{};
+//        // Construct neighbor info:
+//        std::vector<Coordinate<int>> blockOffsets = {
+//                {0, -1, 0},
+//                {0, 1, 0},
+//                {-1, 0, 0},
+//                {1, 0, 0},
+//                {0, 0, -1},
+//                {0, 0, 1}
+//        };
+//        int sideIdx =0;
+//        for (auto coordOffset: blockOffsets)
+//        {
+//            sideIdx++;
+//            BlockInfo info = getBlockInfo((Coordinate<int>{blockPos.x, blockPos.y, blockPos.z} + coordOffset), chunkPos);
+//            int chunkIdxX = (((info.chunk.x + RENDER_DISTANCE) % TOTAL_CHUNK_WIDTH) + TOTAL_CHUNK_WIDTH) % TOTAL_CHUNK_WIDTH;
+//            int chunkIdxZ = (((info.chunk.z + RENDER_DISTANCE) % TOTAL_CHUNK_WIDTH) + TOTAL_CHUNK_WIDTH) % TOTAL_CHUNK_WIDTH;
+//
+//            int chunkIdx = (chunkIdxX * TOTAL_CHUNK_WIDTH) + chunkIdxZ;
+//            int blockIdx = (info.block.y * CHUNK_SIZE) + (info.block.z * CHUNK_WIDTH) + info.block.x;
+//            NeighborInfo neighbor = chunkSSBOPointer[chunkIdx].blockVisibility[blockIdx];
+//            if (!neighbor.blockExists())
+//            {
+//                continue;
+//            }
+//            neighbor[sideIdx] = drawBlock;
+//            chunkSSBOPointer[chunkIdx].blockVisibility[blockIdx] = neighbor;
+//        }
+//    }
     int findChunkIdx(int coord)
     {
         if ((coord + RENDER_DISTANCE) < 0)
@@ -98,7 +94,7 @@ namespace Craft
                 if (world->chunks.find(info.chunk) != world->chunks.end())
                 {
                     std::lock_guard<std::mutex> lock(world->chunkMutex);
-                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, world->worldChunkInfoSSBOID);
+                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, world->SSBO);
                     if (world->chunkSSBOPointer == nullptr)
                     {
                         std::cerr << "Failed to retrieve SSBO Data." << std::endl;
@@ -109,11 +105,8 @@ namespace Craft
 
                     int chunkIdx = (chunkIdxX * TOTAL_CHUNK_WIDTH) + chunkIdxZ;
                     world->chunks[info.chunk]->deleteBlock(info.block, world->chunkSSBOPointer[chunkIdx].blockVisibility);
-                    chunksToUpdate = world->updateNeighbors(info.block, info.chunk, world->chunkSSBOPointer, true);
-                    for (auto chunk: chunksToUpdate)
-                    {
-                        world->chunks[chunk]->initBufferData(world->textures, chunkIdx);
-                    }
+                    world->needsToUpdateNeighbors = true;
+                    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
                 }
             }
         }
@@ -128,7 +121,7 @@ namespace Craft
                 if (world->chunks.find(info.chunk) != world->chunks.end())
                 {
                     std::lock_guard<std::mutex> lock(world->chunkMutex);
-                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, world->worldChunkInfoSSBOID);
+                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, world->SSBO);
                     if (world->chunkSSBOPointer == nullptr)
                     {
                         std::cerr << "Failed to retrieve SSBO Data." << std::endl;
@@ -137,12 +130,9 @@ namespace Craft
                     int chunkIdxX = findChunkIdx(info.chunk.x);
                     int chunkIdxZ = findChunkIdx(info.chunk.z);
                     int chunkIdx = (chunkIdxX * TOTAL_CHUNK_WIDTH) + chunkIdxZ;
-                    world->chunks[info.chunk]->createBlock(info.block, world->chunkSSBOPointer[chunkIdx].blockVisibility);
-                    chunksToUpdate = world->updateNeighbors(info.block, info.chunk, world->chunkSSBOPointer, false);
-                    for (auto chunk: chunksToUpdate)
-                    {
-                        world->chunks[chunk]->initBufferData(world->textures, chunkIdx);
-                    }
+                    world->chunks[info.chunk]->createBlock(info.block, world->textures, world->chunkSSBOPointer[chunkIdx].blockVisibility);
+                    world->needsToUpdateNeighbors = true;
+                    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
                 }
             }
             else
@@ -163,6 +153,7 @@ namespace Craft
         chunkStartZ = (int) player.originChunk.z - (RENDER_DISTANCE);
         chunkEndX = (int) player.originChunk.x + (RENDER_DISTANCE) + 1;
         chunkEndZ = (int) player.originChunk.z + (RENDER_DISTANCE) + 1;
+        minChunkCoord = {chunkStartX, chunkStartZ};
     }
     World::~World()
     {
@@ -175,11 +166,17 @@ namespace Craft
         delete[] chunkFirst;
         delete textures;
         delete userPointer;
-        glDeleteBuffers(1, &worldChunkInfoSSBOID);
-        if (VBO != 0 && VAO != 0)
+        if (SSBO != 0)
         {
-            glDeleteBuffers(1, &(VBO));
+            glDeleteVertexArrays(1, &(SSBO));
+        }
+        if (VAO != 0)
+        {
             glDeleteVertexArrays(1, &(VAO));
+        }
+        if (IBO != 0)
+        {
+            glDeleteVertexArrays(1, &(IBO));
         }
     }
     void World::initChunk(int x, int z, NeighborInfo* visibility)
@@ -187,49 +184,48 @@ namespace Craft
         Coordinate2D<int> currChunkCoord{x, z};
         {
             std::lock_guard<std::mutex> lock(chunkMutex);
-            chunks.emplace(currChunkCoord, std::make_unique<Chunk>(blockProgram, x, z, &coords, &coordsMutex, VBO));
+            chunks.emplace(currChunkCoord, std::make_unique<Chunk>(blockProgram, x, z, &coords, &coordsMutex));
         }
-        chunks[currChunkCoord]->initChunk(visibility);
+        chunks[currChunkCoord]->initChunk(visibility, textures);
     }
     void World::initBuffers()
     {
-        // Init VAO and VBO
-        if (VAO == 0)
-            glGenVertexArrays(1, &VAO);
-        if (VBO == 0)
-            glGenBuffers(1, &VBO);
-
+        // Init VAO, IBO and,
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &IBO);
+        glGenBuffers(1, &SSBO);
+        glGenBuffers(1, &VBO);
         // Bind VAO
         glBindVertexArray(VAO);
-        // Bind and initialize the VBO
+
+        float vertexData[3];
+        vertexData[0] = 0.0f;
+        vertexData[1] = 0.0f;
+        vertexData[2] = 0.0f;
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        uint32_t totalVboSize = MAX_WORLD_BLOCKS * sizeof(BlockVertexData);
-        // We will map the data by range when we need to update the data.
-        glBufferData(GL_ARRAY_BUFFER, totalVboSize, nullptr, GL_DYNAMIC_DRAW);
-        auto stride = (GLsizei) sizeof(BlockVertexData);
-        // 1 block data
-        glVertexAttribPointer(0, 1, GL_FLOAT, GL_FALSE, stride, nullptr);
+        glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(float), vertexData, GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
-        // Block Pos X and Z (in world coords)
-        glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, stride, (void*) (1 * sizeof(int)));
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, stride, (void*) (2 * sizeof(int)));
-        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-        glBindVertexArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        // Setup Indirect Buffer Object
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, IBO);
+        glBufferData(GL_DRAW_INDIRECT_BUFFER, TOTAL_MAX_CHUNKS * sizeof(DrawArraysIndirectCommand), nullptr, GL_DYNAMIC_DRAW);
 
-        // Init SSBO Buffer
-        glGenBuffers(1, &worldChunkInfoSSBOID);
-        // Bind SSBO to both blockPrograms.
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, worldChunkInfoSSBOID);
+        // Bind and initialize the storage for the SSBO.
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, SSBO);
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, TOTAL_MAX_CHUNKS * sizeof(ChunkInfoSSBO), nullptr,
                         GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+
         GLuint chunkInfoIdx = 0;
+        // Define the SSBO for the neighbor compute shader.
         neighborCompute->useCompute();
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, chunkInfoIdx, worldChunkInfoSSBOID);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, chunkInfoIdx, SSBO);
+
+        // Define the SSBO for the block shaders.
         blockProgram->useProgram();
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, chunkInfoIdx, worldChunkInfoSSBOID);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, chunkInfoIdx, SSBO);
+
+        // Map the buffer for further updates.
         chunkSSBOPointer = (ChunkInfoSSBO*) glMapBufferRange(
                 GL_SHADER_STORAGE_BUFFER, 0, TOTAL_MAX_CHUNKS * sizeof(ChunkInfoSSBO),
                 GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT
@@ -250,8 +246,8 @@ namespace Craft
             return false;
         }
 
-        blockCounts = new GLint[TOTAL_MAX_CHUNKS];
-        chunkFirst = new GLsizei[TOTAL_MAX_CHUNKS];
+        auto drawCommands = (DrawArraysIndirectCommand*) glMapBuffer(GL_DRAW_INDIRECT_BUFFER, GL_WRITE_ONLY);
+
         auto chunkOffset = (GLsizei) (BLOCKS_IN_CHUNK);
         GLsizei chunkIdxX, chunkIdxZ, chunkIdx;
         for (int x=chunkStartX;x<chunkEndX; x++)
@@ -265,17 +261,16 @@ namespace Craft
                     chunkIdx = (chunkIdxX * TOTAL_CHUNK_WIDTH) + chunkIdxZ;
                     initChunk(x, z, chunkSSBOPointer[chunkIdx].blockVisibility);
 
-                    chunks[{x, z}]->initBufferData(textures, chunkIdx);
-
-                    GLsizei chunkVBOIdx = chunkIdx * chunkOffset;
-                    blockCounts[chunkIdx] = chunks[{x, z}]->vboSize;
-                    chunkFirst[chunkIdx] = (GLsizei) (chunkVBOIdx);
+                    drawCommands[chunkIdx].first = 0;
+                    drawCommands[chunkIdx].count = 1;
+                    drawCommands[chunkIdx].instanceCount = BLOCKS_IN_CHUNK;
+                    drawCommands[chunkIdx].baseInstance = chunkIdx * chunkOffset;
                 }
             }
         }
 
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
-
+        glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
         calcNeighborInfo();
         if (!player.initPlayer())
         {
@@ -300,10 +295,10 @@ namespace Craft
         // Use the compute shader blockProgram
         neighborCompute->useCompute();
         int worldWidth = (TOTAL_CHUNK_WIDTH * CHUNK_WIDTH);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, worldChunkInfoSSBOID);
         setInt(neighborCompute->getProgram(), "u_WorldWidth", worldWidth);
-        setInt(neighborCompute->getProgram(), "u_NumChunks", TOTAL_CHUNK_WIDTH);
-        setInt(neighborCompute->getProgram(), "u_RenderDistance", RENDER_DISTANCE);
+        setInt(neighborCompute->getProgram(), "u_numChunks", TOTAL_CHUNK_WIDTH);
+        setInt(neighborCompute->getProgram(), "u_renderDistance", RENDER_DISTANCE);
+        setiVec2(neighborCompute->getProgram(), "u_minChunkCoords", minChunkCoord);
         // Dispatch the compute shader
         glDispatchCompute(worldWidth, CHUNK_HEIGHT, worldWidth);
         // Make sure the compute shader has finished before using the data
@@ -320,7 +315,6 @@ namespace Craft
             {
                 int chunkIdx = (x * TOTAL_CHUNK_WIDTH) + z;
                 memset(&chunkSSBOPointer[chunkIdx], 0, sizeof(ChunkInfoSSBO));
-                blockCounts[chunkIdx] = 0;
             }
         }
         else if (directionDiff.z != 0)
@@ -330,7 +324,6 @@ namespace Craft
             {
                 int chunkIdx = (x * TOTAL_CHUNK_WIDTH) + z;
                 memset(&chunkSSBOPointer[chunkIdx], 0, sizeof(ChunkInfoSSBO));
-                blockCounts[chunkIdx] = 0;
             }
         }
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
@@ -338,10 +331,11 @@ namespace Craft
     void World::updateChunksLoaded(Coordinate2D<int> directionDiff)
     {
         updateChunkBounds();
+
         translateChunkSSBOData(directionDiff);
 
-//        futures.emplace_back(
-//            pool.enqueue([this]() {
+        futures.emplace_back(
+            pool.enqueue([this]() {
                 for (int x=chunkStartX; x<chunkEndX; x++)
                 {
                     for (int z=chunkStartZ; z<chunkEndZ; z++)
@@ -352,19 +346,16 @@ namespace Craft
                         {
                             int chunkIdxX = findChunkIdx(x);
                             int chunkIdxZ = findChunkIdx(z);
-
                             int chunkIdx = (chunkIdxX * TOTAL_CHUNK_WIDTH) + chunkIdxZ;
                             initChunk(currChunkCoord.x, currChunkCoord.z, chunkSSBOPointer[chunkIdx].blockVisibility);
-
-                            chunks[currChunkCoord]->initBufferData(textures, chunkIdx);
-
-                            blockCounts[chunkIdx] = chunks[currChunkCoord]->vboSize;
                         }
                     }
                 }
                 needsToUpdateNeighbors = true;
-//            })
-//        );
+            })
+        );
+
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
 
         for (auto chunkIter = chunks.begin(); chunkIter != chunks.end(); )
         {
@@ -373,6 +364,7 @@ namespace Craft
                     chunkIter->first.z < chunkStartZ || chunkIter->first.z >= chunkEndZ
                 )
             {
+                coords.erase(chunkIter->first);
                 chunkIter = chunks.erase(chunkIter);
             }
             else
@@ -426,17 +418,22 @@ namespace Craft
         float newLightLevelEq1 = 7 * cosX + 5;
         float newLightLevelEq2 = 4 * abs(cosX);
 
-        setFloat(blockProgram->getProgram(), "u_DefaultLightLevel", newLightLevelEq1 + newLightLevelEq2);
-        setInt(blockProgram->getProgram(), "u_NumChunks", TOTAL_CHUNK_WIDTH);
-        setInt(blockProgram->getProgram(), "u_RenderDistance", RENDER_DISTANCE);
+        setFloat(blockProgram->getProgram(), "u_defaultLightLevel", newLightLevelEq1 + newLightLevelEq2);
+        setInt(blockProgram->getProgram(), "u_numChunks", TOTAL_CHUNK_WIDTH);
+        setInt(blockProgram->getProgram(), "u_renderDistance", RENDER_DISTANCE);
+        setiVec2(blockProgram->getProgram(), "u_minChunkCoords", minChunkCoord);
 
-        glMultiDrawArrays(GL_POINTS, chunkFirst, blockCounts, TOTAL_MAX_CHUNKS);
+        glMultiDrawArraysIndirect(GL_POINTS, nullptr, TOTAL_MAX_CHUNKS, 0);
         glBindVertexArray(0);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_BUFFER_UPDATE_BARRIER_BIT);
         glFinish();
         sun.drawLight((float) player.getWorldX(), (float) player.entityY, (float) player.getWorldZ());
-        std::cout << "FPS: " << timer.getFPS() << std::endl;
+//        std::cout << "FPS: " << timer.getFPS() << std::endl;
 
         return true;
     }
 }
+
+// 7, 8, 6
+// 4, 5, 3
+// 1, 2, 0

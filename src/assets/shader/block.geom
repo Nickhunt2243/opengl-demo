@@ -6,6 +6,13 @@ layout(triangle_strip, max_vertices = 24) out;
 // Constants
 const int CHUNK_WIDTH = 16;
 const int CHUNK_HEIGHT = 256;
+const int BLOCK_EXISTS = 1;
+const int Y_MAX_VISIBLE = 2;
+const int Y_MIN_VISIBLE = 4;
+const int X_MAX_VISIBLE = 8;
+const int X_MIN_VISIBLE = 16;
+const int Z_MAX_VISIBLE = 32;
+const int Z_MIN_VISIBLE = 64;
 
 // Inputs from the vertex shader
 in ivec3 a_blockPos[];
@@ -17,11 +24,10 @@ in int a_xMaxTexture[];
 in int a_xMinTexture[];
 in int a_zMaxTexture[];
 in int a_zMinTexture[];
+in flat int a_blockVisibility[];
 
 // Outputs to the fragment shader
-
 out vec2 g_texCoords;
-//out ivec2 g_chunkPos;
 out flat int g_currTex;
 out flat vec4 g_colorMap;
 out flat ivec3 g_blockPos;
@@ -30,8 +36,6 @@ out flat float g_colorScalar;
 
 // Uniform from your application
 uniform ivec3 u_CameraNorm;
-uniform int u_NumChunks;
-uniform int u_RenderDistance;
 uniform mat4 u_projT;
 uniform mat4 u_viewT;
 
@@ -52,71 +56,25 @@ void setOutputs(
     EmitVertex();
 }
 
-struct blockV{
-    int data;
-//    int chunkPosX;
-//    int chunkPosZ;
-//    int chunkIdx;
-//    float blockX;
-//    float blockZ;
-//    float blockY;
-////    float relBlockX;
-////    float relBlockZ;
-////    float relBlockY;
-//    int chunkIdxX;
-//    int chunkIdxZ;
-//    int u_RenderDistance;
-//    int u_NumChunks;
+struct BlockInformation
+{
+    int sideData;
 };
-
 struct ChunkInfo
 {
-    blockV blockVisibility[CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH];
+    BlockInformation blockVisibility[CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH];
 };
 layout (std430, binding = 0) buffer blockInformationBuffer
 {
     ChunkInfo chunkInfo[];
 };
 
-int findChunkIdx(int coord)
-{
-    if ((coord + u_RenderDistance) < 0)
-    {
-        return ((((((coord + u_RenderDistance) * -1) % u_NumChunks) * -1) + u_NumChunks) % u_NumChunks);
-    }
-    else
-    {
-        return (((coord + u_RenderDistance) % u_NumChunks) + u_NumChunks) % u_NumChunks;
-    }
-}
-
 void main()
 {
-
-    // Compare the normal from the first vertex with the camera normal
-    int chunkIdxX = findChunkIdx(a_chunkPos[0].x);
-    int chunkIdxZ = findChunkIdx(a_chunkPos[0].y);
-//
-//    int chunkIdxX = (((a_chunkPos[0].x + u_RenderDistance) % u_NumChunks) + u_NumChunks) % u_NumChunks;
-//    int chunkIdxZ = (((a_chunkPos[0].y + u_RenderDistance) % u_NumChunks) + u_NumChunks) % u_NumChunks;
-    int chunkIdx = (chunkIdxX * u_NumChunks) + chunkIdxZ;
-    int blockIdx = (a_blockPos[0].y * CHUNK_WIDTH * CHUNK_WIDTH) + (a_blockPos[0].z * CHUNK_WIDTH) + a_blockPos[0].x;
-//    chunkInfo[chunkIdx].blockVisibility[blockIdx].chunkPosX = a_chunkPos[0].x;
-//    chunkInfo[chunkIdx].blockVisibility[blockIdx].chunkPosZ = a_chunkPos[0].y;
-//    chunkInfo[chunkIdx].blockVisibility[blockIdx].chunkIdxX = chunkIdxX;
-//    chunkInfo[chunkIdx].blockVisibility[blockIdx].chunkIdxZ = chunkIdxZ;
-//    chunkInfo[chunkIdx].blockVisibility[blockIdx].u_RenderDistance = u_RenderDistance;
-//    chunkInfo[chunkIdx].blockVisibility[blockIdx].u_NumChunks = u_NumChunks;
-//
-//    chunkInfo[chunkIdx].blockVisibility[blockIdx].chunkIdx = chunkIdx;
-//    chunkInfo[chunkIdx].blockVisibility[blockIdx].blockX = gl_in[0].gl_Position.x;
-//    chunkInfo[chunkIdx].blockVisibility[blockIdx].blockZ = gl_in[0].gl_Position.z;
-//    chunkInfo[chunkIdx].blockVisibility[blockIdx].blockY = gl_in[0].gl_Position.y;
-//    chunkInfo[chunkIdx].blockVisibility[blockIdx].relBlockX = (a_chunkPos[0].x + u_RenderDistance); // -2 + 1
-//    chunkInfo[chunkIdx].blockVisibility[blockIdx].relBlockZ = ((a_chunkPos[0].x + u_RenderDistance) % u_NumChunks); // -1 % 3
-//    chunkInfo[chunkIdx].blockVisibility[blockIdx].relBlockY = ((a_chunkPos[0].x + u_RenderDistance) % u_NumChunks) + u_NumChunks;
-
-    int blockVisibility = chunkInfo[chunkIdx].blockVisibility[blockIdx].data;
+    if ((a_blockVisibility[0] & BLOCK_EXISTS) != 1)
+    {
+        return;
+    }
     ivec3 norm;
     mat4 transMatrix = u_projT * u_viewT;
 
@@ -136,9 +94,9 @@ void main()
     vec2 uv11 = vec2(1, 1);
 
     // Top vertex info
-    norm = ivec3(0, 1, 0);
-    if ((blockVisibility & 2) == 2)
+    if ((a_blockVisibility[0] & Y_MAX_VISIBLE) == Y_MAX_VISIBLE)
     {
+        norm = ivec3(0, 1, 0);
         setOutputs( topRightFront, uv10, a_yMaxTexture[0], norm);
         setOutputs( topRightBack, uv11, a_yMaxTexture[0], norm);
         setOutputs( topLeftFront, uv00, a_yMaxTexture[0], norm);
@@ -146,9 +104,9 @@ void main()
         EndPrimitive();
     }
     // Bottom vertex info
-    norm = ivec3(0, -1, 0);
-    if ((blockVisibility & 4) == 4)
+    if ((a_blockVisibility[0] & Y_MIN_VISIBLE) == Y_MIN_VISIBLE)
     {
+        norm = ivec3(0, -1, 0);
         setOutputs(bottomRightBack, uv00, a_yMinTexture[0], norm);
         setOutputs(bottomRightFront, uv10, a_yMinTexture[0], norm);
         setOutputs(bottomLeftBack, uv01, a_yMinTexture[0], norm);
@@ -156,9 +114,9 @@ void main()
         EndPrimitive();
     }
     // X_MAX (old back) vertex info
-    norm = ivec3(1, 0, 0);
-    if ((blockVisibility & 8) == 8 && norm != u_CameraNorm)
+    if ((a_blockVisibility[0] & X_MAX_VISIBLE) == X_MAX_VISIBLE && norm != u_CameraNorm)
     {
+        norm = ivec3(1, 0, 0);
         setOutputs(topRightBack, uv00, a_xMaxTexture[0], norm);
         setOutputs(bottomRightBack, uv01, a_xMaxTexture[0], norm);
         setOutputs(topLeftBack, uv10, a_xMaxTexture[0], norm);
@@ -166,9 +124,9 @@ void main()
         EndPrimitive();
     }
     // X_MIN (old front) vertex info
-    norm = ivec3(-1, 0, 0);
-    if ((blockVisibility & 16) == 16 && norm != u_CameraNorm)
+    if ((a_blockVisibility[0] & X_MIN_VISIBLE) == X_MIN_VISIBLE && norm != u_CameraNorm)
     {
+        norm = ivec3(-1, 0, 0);
         setOutputs(topLeftFront, uv00, a_xMinTexture[0], norm);
         setOutputs(bottomLeftFront, uv01, a_xMinTexture[0], norm);
         setOutputs(topRightFront, uv10, a_xMinTexture[0], norm);
@@ -176,9 +134,9 @@ void main()
         EndPrimitive();
     }
     // Z_MAX (old right) vertex info
-    norm = ivec3(0, 0, 1);
-    if ((blockVisibility & 32) == 32 && norm != u_CameraNorm)
+    if ((a_blockVisibility[0] & Z_MAX_VISIBLE) == Z_MAX_VISIBLE && norm != u_CameraNorm)
     {
+        norm = ivec3(0, 0, 1);
         setOutputs(topRightFront, uv00, a_zMaxTexture[0], norm);
         setOutputs(bottomRightFront, uv01, a_zMaxTexture[0], norm);
         setOutputs(topRightBack, uv10, a_zMaxTexture[0], norm);
@@ -186,13 +144,14 @@ void main()
         EndPrimitive();
     }
     // Left vertex info
-    norm = ivec3(0, 0, -1);
-    if ((blockVisibility & 64) == 64 && norm != u_CameraNorm)
+    if ((a_blockVisibility[0] & Z_MIN_VISIBLE) == Z_MIN_VISIBLE && norm != u_CameraNorm)
     {
+        norm = ivec3(0, 0, -1);
         setOutputs(topLeftBack, uv00, a_zMinTexture[0], norm);
         setOutputs(bottomLeftBack, uv01, a_zMinTexture[0], norm);
         setOutputs(topLeftFront, uv10, a_zMinTexture[0], norm);
         setOutputs(bottomLeftFront, uv11, a_zMinTexture[0], norm);
         EndPrimitive();
     }
+
 }

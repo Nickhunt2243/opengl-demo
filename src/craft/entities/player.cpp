@@ -29,7 +29,7 @@ namespace Craft {
             {
                     timer,
                     playerInitialX, playerInitialY, playerInitialZ,
-                    Coordinate2D<int>{-1, 0},
+                    Coordinate2D<int>{200, -500},
                     PLAYER_FRONT_BOUND, PLAYER_BACK_BOUND, PLAYER_LEFT_BOUND, PLAYER_RIGHT_BOUND,
                     coords
             }
@@ -51,7 +51,7 @@ namespace Craft {
     }
     Coordinate<int> Player::getNextLookAtBlock() const
     {
-        std::cout << "Current: " << *lookAtBlock << std::endl;
+//        std::cout << "Current: " << *lookAtBlock << std::endl;
         switch (lookAtSide)
         {
             case BlockSideType::X_MAX:
@@ -367,11 +367,7 @@ namespace Craft {
             int chunkBlockZ = nextBlockZ - (chunkPos.z * 16);
             BlockInfo info = getBlockInfo({chunkBlockX, nextBlockY, chunkBlockZ}, chunkPos);
             // Checking if is block.
-            bool isBlock;
-            {
-                std::lock_guard<std::mutex> lock(*coordsMutex);
-                isBlock = (*coords->at(info.chunk)).find(info.block) != (*coords->at(info.chunk)).end();
-            }
+            bool isBlock = blockExists(info, coords);
             if (
                     isBlock && (lookAtBlock == nullptr ||
                     lookAtBlock->x != nextBlockX || lookAtBlock->y != nextBlockY || lookAtBlock->z != nextBlockZ)

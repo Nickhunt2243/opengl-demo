@@ -15,15 +15,15 @@ namespace Craft
             Engine::Program* blockProgram,
             int x, int z,
             std::unordered_map<Coordinate2D<int>, std::unordered_map<Coordinate<int>, Block>*>* coords,
-            std::mutex* coordsMutex, GLuint VBO
+            std::mutex* coordsMutex
     )
         : blockProgram{blockProgram}
         , coords{coords}
         , chunkPos(x, z)
         , coordsMutex{coordsMutex}
-        , VBO{VBO}
     {};
-    void Chunk::initChunk(NeighborInfo* visibility)
+    Chunk::~Chunk() = default;
+    void Chunk::initChunk(NeighborInfo* visibility, Textures* textures)
     {
         BlockType blockType;
 
@@ -71,8 +71,9 @@ namespace Craft
             _mm256_storeu_epi32((int*)(yHeights + idx2), _mm256_cvtps_epi32(currFractalNoise2));
         }
 
-        int offsetIdx, idx, yHeightFinal;
+        int blockIdx, idx, yHeightFinal;
         Coordinate<int> baseCoord{0, 0, 0};
+        BlockTexture texture{};
         for (int xIdx=0; xIdx<CHUNK_WIDTH; xIdx++)
         {
             baseCoord.x = xIdx;
@@ -83,11 +84,12 @@ namespace Craft
                 yHeightFinal = yHeights[idx];
                 for (int yIdx=0; yIdx<yHeightFinal; yIdx++)
                 {
-                    offsetIdx = (yIdx * CHUNK_SIZE) + (zIdx * CHUNK_WIDTH) + xIdx;
-                    visibility[offsetIdx].setNeighbor(1);
+                    blockIdx = (yIdx * CHUNK_SIZE) + (zIdx * CHUNK_WIDTH) + xIdx;
                     baseCoord.y = yIdx;
                     blockType = yIdx < yHeightFinal - 3 ? BlockType::STONE : BlockType::GRASS;
                     blocksMap.emplace(baseCoord, Block(blockType));
+                    texture = textures->textureMapping.at(blockType);
+                    appendAllCoordInfo(visibility, blockIdx, texture);
                 }
                 idx += CHUNK_WIDTH;
             }
@@ -106,62 +108,18 @@ namespace Craft
         }
         blocksMap.erase(blockPos);
         int idx = (blockPos.y * CHUNK_SIZE) + (blockPos.z * CHUNK_WIDTH) + blockPos.x;
-        visibility[idx].setNeighbor(0);
+        visibility[idx].sideData = 0;
     }
-    void Chunk::createBlock(Coordinate<int> blockPos, NeighborInfo* visibility)
+    void Chunk::createBlock(Coordinate<int> blockPos, Textures* textures, NeighborInfo* visibility)
     {
         BlockType blockType = BlockType::STONE;
         auto newBlock = Block(blockType);
+        int idx = (blockPos.y * CHUNK_SIZE) + (blockPos.z * CHUNK_WIDTH) + blockPos.x;
+
+        appendAllCoordInfo(visibility, idx, textures->textureMapping.at(blockType));
         {
             std::lock_guard<std::mutex> lock(blocksMutex);
             blocksMap.emplace(blockPos, newBlock);
         }
-        int idx = (blockPos.y * CHUNK_SIZE) + (blockPos.z * CHUNK_WIDTH) + blockPos.x;
-
-        // Construct neighbor info:
-        BlockInfo y_maxCoord = getBlockInfo({blockPos.x, blockPos.y + 1, blockPos.z}, chunkPos);
-        BlockInfo y_minCoord = getBlockInfo({blockPos.x, blockPos.y - 1, blockPos.z}, chunkPos);
-        BlockInfo x_maxCoord = getBlockInfo({blockPos.x + 1, blockPos.y, blockPos.z}, chunkPos);
-        BlockInfo x_minCoord = getBlockInfo({blockPos.x - 1, blockPos.y, blockPos.z}, chunkPos);
-        BlockInfo z_maxCoord = getBlockInfo({blockPos.x, blockPos.y, blockPos.z + 1}, chunkPos);
-        BlockInfo z_minCoord = getBlockInfo({blockPos.x, blockPos.y, blockPos.z - 1}, chunkPos);
-
-        int neighborInfo = 1; // set 1 bit to true because block exists.
-        neighborInfo += (*coords)[y_maxCoord.chunk]->find(y_maxCoord.block) == (*coords)[y_maxCoord.chunk]->end() ? 2 : 0;
-        neighborInfo += (*coords)[y_minCoord.chunk]->find(y_minCoord.block) == (*coords)[y_minCoord.chunk]->end() ? 4 : 0;
-        neighborInfo += (*coords)[x_maxCoord.chunk]->find(x_maxCoord.block) == (*coords)[x_maxCoord.chunk]->end() ? 8 : 0;
-        neighborInfo += (*coords)[x_minCoord.chunk]->find(x_minCoord.block) == (*coords)[x_minCoord.chunk]->end() ? 16 : 0;
-        neighborInfo += (*coords)[z_maxCoord.chunk]->find(z_maxCoord.block) == (*coords)[z_maxCoord.chunk]->end() ? 32 : 0;
-        neighborInfo += (*coords)[z_minCoord.chunk]->find(z_minCoord.block) == (*coords)[z_minCoord.chunk]->end() ? 64 : 0;
-
-        visibility[idx].setNeighbor(neighborInfo);
-    }
-    void Chunk::initBufferData(Textures* textures, int chunkIdx)
-    {
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        auto chunkByteOffset = (GLsizei) (BLOCKS_IN_CHUNK * sizeof(BlockVertexData));
-        GLsizei chunkVBOIdx = chunkIdx * chunkByteOffset;
-
-        auto blockData = (BlockVertexData*) glMapBufferRange(GL_ARRAY_BUFFER, chunkVBOIdx, chunkByteOffset, GL_MAP_WRITE_BIT);
-        // Reset the blockData.
-        if (blockData == nullptr)
-        {
-            std::cerr << "Failed to retrieve Buffer Data." << std::endl;
-            return;
-        }
-        // Reset this range to 0 prior to writing to it.
-        memset(blockData, 0, chunkByteOffset);
-        vboSize = (int) blocksMap.size();
-
-        int vIdx = 0;
-        BlockTexture texture{};
-        Coordinate<int> blockWorldCoord{chunkPos.x * 16, 0, chunkPos.z * 16};
-        for (auto block: blocksMap)
-        {
-            texture = textures->textureMapping.at(block.second.type);
-            appendAllCoordInfo(blockData[vIdx], {blockWorldCoord.x + block.first.x, block.first.y, blockWorldCoord.z + block.first.z}, texture);
-            vIdx++;
-        }
-        glUnmapBuffer(GL_ARRAY_BUFFER);
     }
 }

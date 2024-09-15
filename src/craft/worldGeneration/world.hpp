@@ -55,23 +55,23 @@ namespace Craft
         GLFWUserPointer* userPointer;
         /// The mutex for the multi-threading.
         std::mutex chunkMutex{};
+        GLuint SSBO{0};
         /// The ID for the SSBO containing neighbor Information
-        GLuint worldChunkInfoSSBOID;
-        /**
-         * A function for updating the surrounding blocks neighbor information when we place or delete a block.
-         *
-         * @param blockPos:      The position of the block being updated (placed/deleted).
-         * @param chunkPos:      The position of the chunk being updated.
-         * @param chunkInfoSSBO: The id of the SSBO containing neighbor information.
-         * @param drawBlock:     A Boolean of whether we are drawing the given blocks sides.
-         * @return:              A set of all the chunks that have been updated.
-         */
-        std::unordered_set<Coordinate2D<int>> updateNeighbors(
-                Coordinate<int> blockPos,
-                Coordinate2D<int> chunkPos,
-                ChunkInfoSSBO* chunkInfoSSBO,
-                bool drawBlock
-        );
+//        GLuint worldChunkInfoSSBOID;
+//        /**
+//         * A function for updating the surrounding blocks neighbor information when we place or delete a block.
+//         *
+//         * @param blockPos:      The position of the block being updated (placed/deleted).
+//         * @param chunkPos:      The position of the chunk being updated.
+//         * @param chunkInfoSSBO: The id of the SSBO containing neighbor information.
+//         * @param drawBlock:     A Boolean of whether we are drawing the given blocks sides.
+//         * @return:              A set of all the chunks that have been updated.
+//         */
+//        void updateNeighbors(
+//                Coordinate<int> blockPos,
+//                Coordinate2D<int> chunkPos,
+//                bool drawBlock
+//        );
         ChunkInfoSSBO* chunkSSBOPointer{nullptr};
         /// The pointer to the textures object, holding all information on the generated textures.
         Textures* textures{nullptr};
@@ -85,8 +85,15 @@ namespace Craft
          * @param chunksAdded: The chunks to be updated.
          */
         void calcNeighborInfo();
+        typedef struct {
+            GLuint count;
+            GLuint instanceCount;
+            GLuint first;
+            GLuint baseInstance;
+        } DrawArraysIndirectCommand;
     private:
         GLuint VAO{0},
+               IBO{0},
                VBO{0};
         /// The game timer.
         Engine::Timer timer;
@@ -103,6 +110,7 @@ namespace Craft
         /// A mutex for access the coords set.
         std::mutex coordsMutex{};
         std::mutex glMutex{};
+        Coordinate2D<int> minChunkCoord;
         /// The chunks that we need to update neighbor information for.
         std::vector<Coordinate2D<int>> chunksAdded;
         /// The X coordinate of the first chunk to render (inclusive).

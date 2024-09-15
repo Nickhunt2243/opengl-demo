@@ -26,22 +26,21 @@ namespace Craft
             Engine::Program* blockProgram,
             int x, int z,
             std::unordered_map<Coordinate2D<int>, std::unordered_map<Coordinate<int>, Block>*>* coords,
-            std::mutex* coordsMutex, GLuint VBO
+            std::mutex* coordsMutex
         );
-        ~Chunk() = default;
+        ~Chunk();
         /// Initialize a Chunk found at the x, z coordinates.
-        void initChunk(NeighborInfo* visibility);
-        /// A helper function for initializing all neighbor information.
-        void initBufferData(Textures* textures, int chunkIdx);
+        void initChunk(NeighborInfo* visibility, Textures* textures);
         /// A bitset for every block in the chunk. Set to true if a block occupies that space, otherwise false.
         std::unordered_map<Coordinate<int>, Block> blockCoords{0};
         /**
          * Create a block at the given position.
          *
          * @param blockPos:   The position at which to create a block.
+         * @param textures:   The textures for all blocks.
          * @param visibility: The neighbor information for the given chunk.
          */
-        void createBlock(Coordinate<int> blockPos, NeighborInfo* visibility);
+        void createBlock(Coordinate<int> blockPos, Textures* textures, NeighborInfo* visibility);
         /**
          * Delete a block at the given position.
          *
@@ -52,8 +51,6 @@ namespace Craft
         /// The size of the VBO (numBlocks * vertices per block)
         int vboSize{0};
     private:
-        /// The Vertex Buffer Object of the OpenGL program.
-        GLuint VBO{0};
         /// A mutex for accessing the coords set.
         std::mutex* coordsMutex;
         /// A mutex for creating/accessing blocks
@@ -62,8 +59,6 @@ namespace Craft
         std::unordered_map<Coordinate<int>, Block> blocksMap{};
         /// The 2D coordinate (x and z) of the chunk.
         Coordinate2D<int> chunkPos;
-        /// The unsigned integer of the current program.
-        Engine::Program* blockProgram;
         /// A pointer to the mapping of chunk coordinate to block coord map.
         std::unordered_map<Coordinate2D<int>, std::unordered_map<Coordinate<int>, Block>*>* coords;
     };

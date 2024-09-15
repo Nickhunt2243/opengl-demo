@@ -10,7 +10,7 @@ namespace Craft
     /*  World Information Globals  */
     const int CHUNK_WIDTH = 16;
     const int CHUNK_HEIGHT = 256;
-    const int RENDER_DISTANCE = 5;
+    const int RENDER_DISTANCE = 7;
     const int CHUNK_BASE_HEIGHT = 100;
 
     /*  Player Globals  */

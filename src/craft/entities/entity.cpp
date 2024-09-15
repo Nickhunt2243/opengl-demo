@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include "entity.hpp"
+#include "../../helpers/helpers.hpp"
 
 
 namespace Craft
@@ -59,7 +60,7 @@ namespace Craft
             for (Coordinate2D<int> coord: blocksToCheck)
             {
                 BlockInfo info = getBlockInfo({coord.x, blockY, coord.z}, originChunk);
-                if ((*coords->at(info.chunk)).find(info.block) != (*coords->at(info.chunk)).end())
+                if (blockExists(info, coords))
                 {
                     return true;
                 }
@@ -87,7 +88,8 @@ namespace Craft
                 };
         for (Coordinate2D<int> coord: blocksToCheck) {
             BlockInfo info = getBlockInfo({coord.x, blockY, coord.z}, originChunk);
-            if ((*coords->at(info.chunk)).find(info.block) != (*coords->at(info.chunk)).end())
+
+            if (blockExists(info, coords))
             {
                 for (Coordinate2D<long double> entityCoord: entityBoundCoords)
                 {
@@ -106,7 +108,14 @@ namespace Craft
         }
         return false;
     }
-    bool isCheckingFront(int xDirection, int zDirection, int blockXToCheck, int blockZToCheck, long double entityX, long double entityZ)
+    bool isCheckingFront(
+            int xDirection,
+            int zDirection,
+            int blockXToCheck,
+            int blockZToCheck,
+            long double entityX,
+            long double entityZ
+        )
     {
         if (xDirection == 1) {
             return blockXToCheck > entityX;
@@ -216,8 +225,22 @@ namespace Craft
         long double entityWorldX = getWorldX();
         long double entityWorldZ = getWorldZ();
 
-        bool checkingFront = isCheckingFront(xDirection, zDirection, (int) blockChunkWorldX, (int) blockChunkWorldZ, entityWorldX, entityWorldZ);
-        bool checkingLeft = isCheckingLeft(xDirection, zDirection, (int) blockChunkWorldX, (int) blockChunkWorldZ, entityWorldX, entityWorldZ);
+        bool checkingFront = isCheckingFront(
+            xDirection,
+            zDirection,
+            (int) blockChunkWorldX,
+            (int) blockChunkWorldZ,
+            entityWorldX,
+            entityWorldZ
+        );
+        bool checkingLeft = isCheckingLeft(
+            xDirection,
+            zDirection,
+            (int) blockChunkWorldX,
+            (int) blockChunkWorldZ,
+            entityWorldX,
+            entityWorldZ
+        );
         int diffX = 0, diffZ = 0;
 
         // Find the two blocks to check based on the direction and players current block.
@@ -284,10 +307,10 @@ namespace Craft
                                       ? 1 : 0;
             Coordinate<int> topBlockCoord {info.block.x, topBlockY, info.block.z};
             Coordinate<int> bottomBlockCoord {info.block.x, bottomBlockY, info.block.z};
-            if (
-                    (*coords->at(info.chunk)).find(topBlockCoord) != (*coords->at(info.chunk)).end() ||
-                    (*coords->at(info.chunk)).find(bottomBlockCoord) != (*coords->at(info.chunk)).end()
-                )
+            BlockInfo topBlock {topBlockCoord, info.chunk};
+            BlockInfo bottomBlock {bottomBlockCoord, info.chunk};
+
+            if (blockExists(topBlock, coords) || blockExists(bottomBlock, coords))
             {
                 // Check if x edge is within the block.
                 if (
@@ -327,8 +350,22 @@ namespace Craft
         BlockInfo info = getBlockInfo({vertexXToCheck, 0, vertexZToCheck}, originChunk);
         long double blockChunkWorldX = (info.chunk.x * 16) + info.block.x;
         long double blockChunkWorldZ = (info.chunk.z * 16) + info.block.z;
-        bool checkingFront = isCheckingFront(xDirection, zDirection, (int) blockChunkWorldX, (int) blockChunkWorldZ, getWorldX(), getWorldZ());
-        bool checkingLeft = isCheckingLeft(xDirection, zDirection, (int) blockChunkWorldX, (int) blockChunkWorldZ, getWorldX(), getWorldZ());
+        bool checkingFront = isCheckingFront(
+            xDirection,
+            zDirection,
+            (int) blockChunkWorldX,
+            (int) blockChunkWorldZ,
+            getWorldX(),
+            getWorldZ()
+        );
+        bool checkingLeft = isCheckingLeft(
+            xDirection,
+            zDirection,
+            (int) blockChunkWorldX,
+            (int) blockChunkWorldZ,
+            getWorldX(),
+            getWorldZ()
+        );
 
         long double blockDistance = eucDistance(blockChunkWorldX, blockChunkWorldZ, getWorldX(), getWorldZ());
         if (blockDistance >= PLAYER_BOUND) return {0.0l, 0.0l};
@@ -357,12 +394,20 @@ namespace Craft
         info = getBlockInfo({blockXToCheck, (int) round(entityY) - 2, blockZToCheck}, originChunk);
         Coordinate<int> topBlockCoord {info.block.x, topBlockY, info.block.z};
         Coordinate<int> bottomBlockCoord {info.block.x, bottomBlockY, info.block.z};
-        if (
-                (*coords->at(info.chunk)).find(topBlockCoord) != (*coords->at(info.chunk)).end() ||
-                (*coords->at(info.chunk)).find(bottomBlockCoord) != (*coords->at(info.chunk)).end()
-            )
+        BlockInfo topBlock {topBlockCoord, info.chunk};
+        BlockInfo bottomBlock {bottomBlockCoord, info.chunk};
+        if (blockExists(topBlock, coords) || blockExists(bottomBlock, coords))
         {
-            return calculateCorrection(vertexXToCheck, vertexZToCheck, entityX, entityZ, xDirection, zDirection, checkingLeft, checkingFront);
+            return calculateCorrection(
+                    vertexXToCheck,
+                    vertexZToCheck,
+                    entityX,
+                    entityZ,
+                    xDirection,
+                    zDirection,
+                    checkingLeft,
+                    checkingFront
+                );
         }
 
         return {0.0l, 0.0l};

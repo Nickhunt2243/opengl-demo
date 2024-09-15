@@ -10,6 +10,7 @@
 #include <iostream>
 
 #include "../craft/misc/types.hpp"
+#include "../craft/worldGeneration/block.hpp"
 
 /// A struct containing information about a loaded image.
 struct ImageData {
@@ -171,4 +172,11 @@ Craft::BlockInfo getBlockInfo(Craft::Coordinate<int> block, Craft::Coordinate2D<
 inline void checkOpenGLError(const std::string& location) {
     std::cerr << "OpenGL Error " << glGetError() << " at " << location << std::endl;
 }
+/**
+ * Retrieve whether a block exists in the world given its chunk and chunk relative coordinate.
+ * @param info:   The blocks chunk and chunk relative coordinate.
+ * @param coords: The mapping of chunks to a mapping of chunk rel block coordinates to blocks.
+ * @return:       A Boolean value of whether the block exists.
+ */
+bool blockExists(Craft::BlockInfo info, std::unordered_map<Craft::Coordinate2D<int>, std::unordered_map<Craft::Coordinate<int>, Craft::Block>*>* coords);
 #endif //OPENGLDEMO_HELPERS_HPP

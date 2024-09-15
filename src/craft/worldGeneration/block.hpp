@@ -31,15 +31,15 @@ namespace Craft
         /// The amount to decrease the light level by (not currently in use).
         int lightLevelDiff;
     };
-    struct BlockVertexData
-    {
-        float blockData;
-        float chunkPosX;
-        float chunkPosZ;
-    };
+    /**
+     * Appends the information needed when rendering this block.
+     * @param visibility
+     * @param blockIdx
+     * @param currTexture
+     */
     void appendAllCoordInfo(
-            BlockVertexData &blockVertexData,
-            Coordinate<int> blockWorldCoord,
+            NeighborInfo* visibility,
+            int blockIdx,
             BlockTexture currTexture
     );
 }
