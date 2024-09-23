@@ -8,7 +8,7 @@ Welcome to the OpenGL Demo project! This project is a learning exercise inspired
 ![areal_shot](external_assets/progress_images/aerial_shot_terrain.png)
 
 #### Most recent demo:
-[Minecraft_Clone_placing_blocks.mp4](external_assets/progress_images/Minecraft_Clone_placing_blocks.mp4)
+[Most Recent Updates On Youtube](https://www.youtube.com/watch?v=nKIjua3wax8)
 ## Getting Started
 
 ### Prerequisites
