@@ -66,89 +66,17 @@ namespace Craft
             }
         }
     };
-    /**
-     * A struct for accessing specific bits within a byte (unsigned char).
-     *
-     * Used to aid in the reading and writing to neighbor information.
-     */
-    struct ByteProxy {
-        int& byte;
-        int bitIndex;
-
-        ByteProxy(int& byte, int bitIndex)
-                : byte(byte), bitIndex(bitIndex) {}
-
-        // Getter
-        operator bool() const {
-            return (byte >> bitIndex) & 1;
-        }
-
-        // Setter
-        ByteProxy& operator=(bool value) {
-            if (value)
-                byte |= (1 << bitIndex);
-            else
-                byte &= ~(1 << bitIndex);
-            return *this;
-        }
-    };
-    /**
-     * A struct for holding an entire rows (16 blocks/bytes) neighbor information.
-     *
-     * position 0 holds blocks 0-3
-     * position 1 holds blocks 4-7
-     * ...
-     *
-     */
+    typedef struct {
+        GLuint count;
+        GLuint instanceCount;
+        GLuint first;
+        GLuint baseInstance;
+    } DrawArraysIndirectCommand;
     struct NeighborInfo
     {
-//        int blockPosData; // Contains the x, y, z
         int sideData; // Holds information for block neighbors, and textures
-//        int chunkX;
-//        int chunkZ;
-//        int chunkNum;
-//        int blockX;
-//        int blockY;
-//        int blockZ;
-//        int instanceID;
-
-        void setNeighbor(int value)
-        {
-            sideData = (int) value;
-        }
-        ByteProxy block() { return {sideData, 0}; }
-        bool blockExists() const {return (sideData & 1) == 1; }
-        ByteProxy y_max() { return {sideData, 1}; }
-        ByteProxy y_min() { return {sideData, 2}; }
-        ByteProxy x_max() { return {sideData, 3}; }
-        ByteProxy x_min() { return {sideData, 4}; }
-        ByteProxy z_max() { return {sideData, 5}; }
-        ByteProxy z_min() { return {sideData, 6}; }
-        ByteProxy operator [](int index)
-        {
-            return {sideData, index};
-        }
-        [[nodiscard]] int sum() const {
-            return ((sideData >> 1) & 1) + ((sideData >> 2) & 1) +
-                   ((sideData >> 3) & 1) + ((sideData >> 4) & 1) +
-                   ((sideData >> 5) & 1) + ((sideData >> 6) & 1);
-        }
-
+        int lighting[3]; // Holds information for the blocks ambient occlusion.
     };
-    /**
-     * A struct for holding the neighbor info for an entire chunk.
-     *
-     * A blocks neighbor information will be accessed via this method:
-     *
-     * rowNeighborIdx = (blockY * CHUNK_WIDTH) + blockZ
-     * blockIdx = blockX
-     *
-     * NeighborInfo blockNeighborInfo = blockVisibility[rowNeighborIdx][blockIdx];
-     */
-    typedef struct
-    {
-        NeighborInfo blockVisibility[CHUNK_WIDTH * CHUNK_HEIGHT * 16];
-    } ChunkInfoSSBO;
     /**
      * A enum class of types of block's.
      */

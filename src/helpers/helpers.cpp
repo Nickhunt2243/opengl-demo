@@ -5,6 +5,7 @@
 #include <filesystem>
 
 #include "helpers.hpp"
+#include "../craft/misc/globals.hpp"
 
 std::string getFileContents(const char* path)
 {
@@ -187,4 +188,14 @@ bool blockExists(
     auto chunkIter = coords->find(info.chunk);
     if (chunkIter == coords->end()) return false;
     return chunkIter->second->find(info.block) != chunkIter->second->end();
+}
+int findChunkIdx(int coord) {
+    if ((coord + Craft::RENDER_DISTANCE) < 0)
+    {
+        return ((((((coord + Craft::RENDER_DISTANCE) * -1) % Craft::TOTAL_CHUNK_WIDTH) * -1) + Craft::TOTAL_CHUNK_WIDTH) % Craft::TOTAL_CHUNK_WIDTH);
+    }
+    else
+    {
+        return (((coord + Craft::RENDER_DISTANCE) % Craft::TOTAL_CHUNK_WIDTH) + Craft::TOTAL_CHUNK_WIDTH) % Craft::TOTAL_CHUNK_WIDTH;
+    }
 }

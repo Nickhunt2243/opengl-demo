@@ -29,7 +29,7 @@ namespace Craft {
             {
                     timer,
                     playerInitialX, playerInitialY, playerInitialZ,
-                    Coordinate2D<int>{200, -500},
+                    Coordinate2D<int>{0, 0},
                     PLAYER_FRONT_BOUND, PLAYER_BACK_BOUND, PLAYER_LEFT_BOUND, PLAYER_RIGHT_BOUND,
                     coords
             }
@@ -113,6 +113,7 @@ namespace Craft {
     }
     Coordinate2D<int> Player::updatePlayer()
     {
+
 //        std::cout << Coordinate<int>{(int) entityX + (originChunk.x * 16), (int) entityY - 2, (int) entityZ + (originChunk.z * 16)} << std::endl;
         glm::vec3 cameraPos = glm::vec3{entityX + (originChunk.x * 16), entityY, entityZ + (originChunk.z * 16)};
         glm::vec3 cameraFront = camera.getCameraFront();

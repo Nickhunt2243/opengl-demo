@@ -52,7 +52,6 @@ namespace Engine
 
         return true;
     }
-
     bool Camera::updateCamera(glm::vec3 cameraPos, glm::vec3 cameraUp)
     {
 
@@ -68,7 +67,7 @@ namespace Engine
         bool lookingX = abs(normFront.x) > abs(normFront.z);
         int scalar = lookingX ? (normFront.x < 0 ? -1 : 1) : (normFront.z < 0 ? -1 : 1);
         glm::vec3 cameraNormal = glm::vec3{(lookingX ? scalar : 0), 0, (!lookingX ? scalar : 0)};
-        setVec3(program->getProgram(), "u_CameraNorm", cameraNormal);
+//        setVec3(program->getProgram(), "u_CameraNorm", cameraNormal);
 
         worldProgram->useProgram();
         if (!setMat4(worldProgram->getProgram(), "u_viewT", view)) {

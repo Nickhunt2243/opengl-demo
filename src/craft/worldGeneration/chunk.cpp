@@ -12,15 +12,14 @@
 namespace Craft
 {
     Chunk::Chunk(
-            Engine::Program* blockProgram,
-            int x, int z,
+            Coordinate2D<int> chunkPos,
             std::unordered_map<Coordinate2D<int>, std::unordered_map<Coordinate<int>, Block>*>* coords,
             std::mutex* coordsMutex
     )
-        : blockProgram{blockProgram}
-        , coords{coords}
-        , chunkPos(x, z)
+        : coords{coords}
+        , chunkPos(chunkPos)
         , coordsMutex{coordsMutex}
+        , chunkIdx{((findChunkIdx(chunkPos.x) * TOTAL_CHUNK_WIDTH) + findChunkIdx(chunkPos.z))}
     {};
     Chunk::~Chunk() = default;
     void Chunk::initChunk(NeighborInfo* visibility, Textures* textures)
@@ -73,26 +72,34 @@ namespace Craft
 
         int blockIdx, idx, yHeightFinal;
         Coordinate<int> baseCoord{0, 0, 0};
+        Coordinate<int> worldCoord{chunkPos.x * 16, 0, chunkPos.z * 16};
         BlockTexture texture{};
         for (int xIdx=0; xIdx<CHUNK_WIDTH; xIdx++)
         {
             baseCoord.x = xIdx;
+            worldCoord.z = chunkPos.z * 16;
             idx = xIdx;
+            int chunkOffset = chunkIdx * BLOCKS_IN_CHUNK;
             for (int zIdx=0; zIdx<CHUNK_WIDTH; zIdx++)
             {
                 baseCoord.z = zIdx;
+                worldCoord.y = 0;
                 yHeightFinal = yHeights[idx];
                 for (int yIdx=0; yIdx<yHeightFinal; yIdx++)
                 {
                     blockIdx = (yIdx * CHUNK_SIZE) + (zIdx * CHUNK_WIDTH) + xIdx;
                     baseCoord.y = yIdx;
                     blockType = yIdx < yHeightFinal - 3 ? BlockType::STONE : BlockType::GRASS;
-                    blocksMap.emplace(baseCoord, Block(blockType));
+                    blocksMap.insert({baseCoord, Block(blockType)});
                     texture = textures->textureMapping.at(blockType);
-                    appendAllCoordInfo(visibility, blockIdx, texture);
+
+                    appendAllCoordInfo(visibility, chunkOffset + blockIdx, texture);
+                    worldCoord.y += 1;
                 }
                 idx += CHUNK_WIDTH;
+                worldCoord.z += 1;
             }
+            worldCoord.x += 1;
         }
         {
             std::lock_guard<std::mutex> lock(*coordsMutex);
@@ -107,19 +114,17 @@ namespace Craft
             return;
         }
         blocksMap.erase(blockPos);
-        int idx = (blockPos.y * CHUNK_SIZE) + (blockPos.z * CHUNK_WIDTH) + blockPos.x;
+
+        int idx = (chunkIdx * BLOCKS_IN_CHUNK) + (blockPos.y * CHUNK_SIZE) + (blockPos.z * CHUNK_WIDTH) + blockPos.x;
         visibility[idx].sideData = 0;
     }
     void Chunk::createBlock(Coordinate<int> blockPos, Textures* textures, NeighborInfo* visibility)
     {
         BlockType blockType = BlockType::STONE;
         auto newBlock = Block(blockType);
-        int idx = (blockPos.y * CHUNK_SIZE) + (blockPos.z * CHUNK_WIDTH) + blockPos.x;
-
+        int idx = (chunkIdx * BLOCKS_IN_CHUNK) + (blockPos.y * CHUNK_SIZE) + (blockPos.z * CHUNK_WIDTH) + blockPos.x;
         appendAllCoordInfo(visibility, idx, textures->textureMapping.at(blockType));
-        {
-            std::lock_guard<std::mutex> lock(blocksMutex);
-            blocksMap.emplace(blockPos, newBlock);
-        }
+        visibility[idx].sideData |= 0x0ff;
+        blocksMap.emplace(blockPos, newBlock);
     }
 }

@@ -23,8 +23,7 @@ namespace Craft
     {
     public:
         Chunk(
-            Engine::Program* blockProgram,
-            int x, int z,
+            Coordinate2D<int> chunkPos,
             std::unordered_map<Coordinate2D<int>, std::unordered_map<Coordinate<int>, Block>*>* coords,
             std::mutex* coordsMutex
         );
@@ -48,15 +47,15 @@ namespace Craft
          * @param visibility: The neighbor information for the given chunk.
          */
         void deleteBlock(Coordinate<int> blockPos, NeighborInfo* visibility);
-        /// The size of the VBO (numBlocks * vertices per block)
-        int vboSize{0};
+        /// The array of all blocks within this chunk.
+        std::unordered_map<Coordinate<int>, Block> blocksMap{};
+        // Index of the chunk within arrays. Used a lot within buffer objects
+        int chunkIdx;
     private:
         /// A mutex for accessing the coords set.
         std::mutex* coordsMutex;
         /// A mutex for creating/accessing blocks
         std::mutex blocksMutex{};
-        /// The array of all blocks within this chunk.
-        std::unordered_map<Coordinate<int>, Block> blocksMap{};
         /// The 2D coordinate (x and z) of the chunk.
         Coordinate2D<int> chunkPos;
         /// A pointer to the mapping of chunk coordinate to block coord map.

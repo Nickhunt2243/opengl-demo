@@ -1,10 +1,11 @@
 #version 460 core
-in vec2 g_texCoords;
-in vec4 g_colorMap;
-in flat ivec3 g_norm;
-in flat float g_colorScalar;
-in flat int g_currTex;
-in flat ivec3 g_blockPos;
+in flat ivec3 v_blockPos;
+in flat ivec2 v_chunkPos;
+in flat float v_colorScalar;
+in flat ivec3 v_norm;
+in vec2 v_uv;
+in flat int v_textureInfo;
+in float v_ambientValue;
 
 uniform sampler2DArray textures;
 uniform sampler2DArray colorMaps;
@@ -13,37 +14,52 @@ uniform bool u_hasLookAt;
 
 out vec4 FragColor;
 
+lowp float ambientScalar;
+
 void main()
 {
+
+    //
+    // 0 -> .56, 1 -> .69, 2 -> .82, 3 -> 1.0
+    ambientScalar = (v_ambientValue * 0.13) + 0.56;
+    float lightScalar = ambientScalar * v_colorScalar;
+
+    // Stuff for showing chunk grid lines. Not always needed but leaving for future.
+//    if (
+//            v_norm.y == 1.0 && (
+//                (v_blockPos.x == 15 && v_uv.y >= .9) ||
+//                (v_blockPos.z == 15 && v_uv.x >= .9)
+//            )
+//        )
+//    {
+//        FragColor = lightScalar * vec4(0.8f, 0.2f, 0.2f, 0.8f);
+//    }
+//    else if (
+//            v_norm.y == 1 && (
+//                (v_blockPos.x == 0.0 && v_uv.y <= .1) ||
+//                (v_blockPos.z == 0.0 && v_uv.x <= .1)
+//            )
+//        )
+//    {
+//        FragColor = lightScalar * vec4(0.2f, 0.2f, 0.8f, 0.8f);
+//    }
+    // Invalid block (mostly used when a player deletes a block).
+    if (v_textureInfo == 0)
+    {
+        discard;
+    }
+
     if (
-            g_norm.y == 1.0 && (
-                (g_blockPos.x == 15 && g_texCoords.y >= .95) ||
-                (g_blockPos.z == 15 && g_texCoords.x >= .95)
-            )
-        )
-    {
-        FragColor = g_colorScalar * vec4(0.8f, 0.2f, 0.2f, 0.8f);
-    }
-    else if (
-            g_norm.y == 1 && (
-                (g_blockPos.x == 0.0 && g_texCoords.y <= .05) ||
-                (g_blockPos.z == 0.0 && g_texCoords.x <= .05)
-            )
-        )
-    {
-        FragColor = g_colorScalar * vec4(0.2f, 0.2f, 0.8f, 0.8f);
-    }
-    else if (
             u_hasLookAt &&
-            ( g_blockPos.x == u_lookAtBlock.x) && ( g_blockPos.y == u_lookAtBlock.y) && ( g_blockPos.z == u_lookAtBlock.z) &&
-            (g_texCoords.x > 0.9975 || g_texCoords.y > 0.9975 || g_texCoords.x < 0.0025 || g_texCoords.y < 0.0025 )
+            (v_blockPos.x == u_lookAtBlock.x) && (v_blockPos.y == u_lookAtBlock.y) && (v_blockPos.z == u_lookAtBlock.z) &&
+            (v_uv.x > 0.9965 || v_uv.y > 0.9965 || v_uv.x < 0.0035 || v_uv.y < 0.0035 )
         )
     {
-        FragColor = g_colorScalar * vec4(0.3f, 0.3f, 0.3f, 1.0f);
+        float lightConst = lightScalar * 0.2f;
+        FragColor = vec4(lightConst, lightConst, lightConst, 1.0f);
     }
     else
     {
-        vec4 texColor = texture(textures, vec3(g_texCoords, g_currTex));
-        FragColor = g_colorScalar * texColor;
+        FragColor = vec4(lightScalar * texture(textures, vec3(v_uv, v_textureInfo)).xyz, 1.0);
     }
 }

@@ -1,104 +1,82 @@
 #version 460 core
 
-layout(location = 0) in vec3 a_pos;
+layout(location = 0) in ivec3 a_pos;
+layout(location = 1) in ivec3 a_norm;
+layout(location = 2) in ivec2 a_uv;
+layout(location = 3) in int a_textureMask;
+layout(location = 4) in int a_visibilityMask;
+layout(location = 5) in ivec2 a_ambientInfo;
 
 uniform float u_defaultLightLevel;
 uniform int u_numChunks;
-uniform int u_renderDistance;
 uniform ivec2 u_minChunkCoords;
+uniform mat4 u_projT;
+uniform mat4 u_viewT;
 
 const int CHUNK_WIDTH = 16;
 const int CHUNK_HEIGHT = 256;
-const int BLOCKS_PER_CHUNK = CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT;
+const int BLOCKS_IN_CHUNK = CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT;
 
 struct BlockInformation
 {
     int sideData;
-};
-struct ChunkInfo
-{
-    BlockInformation blockVisibility[CHUNK_WIDTH * CHUNK_HEIGHT * CHUNK_WIDTH];
+    int lighting[3];
 };
 layout (std430, binding = 0) buffer blockInformationBuffer
 {
-    ChunkInfo chunkInfo[];
+    BlockInformation blockInfo[];
 };
-int findChunkIdx(int coord)
+layout (std430, binding = 1) buffer chunkPosInformationBuffer
 {
-    if (coord + u_renderDistance < 0)
-    {
-        return ((((((coord + u_renderDistance) * -1) % u_numChunks) * -1) + u_numChunks) % u_numChunks);
-    }
-    else
-    {
-        return (((coord + u_renderDistance) % u_numChunks) + u_numChunks) % u_numChunks;
-    }
-}
-// Breaking the instance id down into the blocks coord info.
-int index = gl_InstanceID + gl_BaseInstance;
+    ivec2 chunkInfo[];
+};
+layout (std430, binding = 2) buffer idxInformationBuffer
+{
+    int idxs[];
+};
 
-int chunkNum = index / BLOCKS_PER_CHUNK;
-int blockIdx = index % BLOCKS_PER_CHUNK;
+int index = idxs[gl_InstanceID + gl_BaseInstance];
 
-ivec2 chunkNormalized = ivec2(chunkNum / u_numChunks, chunkNum % u_numChunks);
-ivec2 chunk = chunkNormalized + u_minChunkCoords;
-
-int chunkIdxX = findChunkIdx(chunk.x);
-int chunkIdxZ = findChunkIdx(chunk.y);
-int chunkIdx = (chunkIdxX * u_numChunks) + chunkIdxZ;
-
-// Derive block coordinates from blockIdx
+int chunkIdx = index / BLOCKS_IN_CHUNK;
+int blockIdx = index % BLOCKS_IN_CHUNK;
 int chunkRelY = blockIdx / (CHUNK_WIDTH * CHUNK_WIDTH);
 int blockRem = blockIdx % (CHUNK_WIDTH * CHUNK_WIDTH);
 int chunkRelZ = (blockRem / CHUNK_WIDTH);
 int chunkRelX = (blockRem % CHUNK_WIDTH);
 
-// Aggregating data needed
-ivec2 chunkPos = chunk;
+BlockInformation info = blockInfo[index];
+ivec2 chunkPos = chunkInfo[chunkIdx];
 ivec3 blockChunkRelPos = ivec3(chunkRelX, chunkRelY, chunkRelZ);
-ivec3 worldCoords = ivec3((CHUNK_WIDTH * chunkPos.x) + chunkRelX, chunkRelY, (CHUNK_WIDTH * chunkPos.y) + chunkRelZ);
-BlockInformation info = chunkInfo[chunkIdx].blockVisibility[blockIdx];
+ivec3 worldCoords = ivec3(
+    (chunkPos.x * CHUNK_WIDTH) + blockChunkRelPos.x,
+    blockChunkRelPos.y,
+    (chunkPos.y * CHUNK_WIDTH) + blockChunkRelPos.z
+);
 
-int yMaxTexture = (info.sideData >> 8) & 7;
-int yMinTexture = (info.sideData >> 11) & 7;
-int xMaxTexture = (info.sideData >> 14) & 7;
-int xMinTexture = (info.sideData >> 17) & 7;
-int zMaxTexture = (info.sideData >> 20) & 7;
-int zMinTexture = (info.sideData >> 23) & 7;
+int textureInfo = (info.sideData >> a_textureMask) & 7;
 
-out ivec3 a_blockPos;
-out ivec2 a_chunkPos;
-out flat float a_colorScalar;
-out int a_yMaxTexture;
-out int a_yMinTexture;
-out int a_xMaxTexture;
-out int a_xMinTexture;
-out int a_zMaxTexture;
-out int a_zMinTexture;
-out int a_chunkIdx;
-out int a_blockIdx;
-out int id;
-out int a_chunkNum;
-out int drawBlock;
-out flat int a_blockVisibility;
-
+out flat ivec3 v_blockPos;
+out flat ivec2 v_chunkPos;
+out flat float v_colorScalar;
+out flat ivec3 v_norm;
+out vec2 v_uv;
+out flat int v_textureInfo;
+out float v_ambientValue;
 void main()
 {
     // Transformed position data
-    gl_Position = vec4(worldCoords, 1.0);
+    gl_Position = u_projT * u_viewT * vec4(worldCoords + a_pos, 1.0);
     // Game Chunk position Data
-    a_blockPos = blockChunkRelPos;
-    a_chunkPos = chunk;
+    v_blockPos = worldCoords;
+    v_chunkPos = chunkPos;
     // Light Data
     float lightLevel = clamp(u_defaultLightLevel, 0, 15);
-    a_colorScalar = (0.6 * lightLevel / 15) + 0.4;
+    v_colorScalar = (0.6 * lightLevel / 15) + 0.4;
     // Texture Data
-    a_yMaxTexture = yMaxTexture;
-    a_yMinTexture = yMinTexture;
-    a_xMaxTexture = xMaxTexture;
-    a_xMinTexture = xMinTexture;
-    a_zMaxTexture = zMaxTexture;
-    a_zMinTexture = zMinTexture;
+    v_norm = a_norm;
+    v_uv = a_uv;
+    v_textureInfo = textureInfo;
     // Block Neighbor Info
-    a_blockVisibility = info.sideData;
+    // Check whether the block exists and if the side has a neighbor
+    v_ambientValue = (info.lighting[a_ambientInfo.x] >> a_ambientInfo.y) & 3;
 }

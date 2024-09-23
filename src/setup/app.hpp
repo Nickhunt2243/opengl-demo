@@ -41,6 +41,8 @@ namespace Engine
         Program* orthoProgram;
         /// The program for our neighbor compute
         Compute* neighborCompute;
+        /// The program for our neighbor compute
+        Compute* ambientOccCompute;
         /// The program for rendering the scenes quad to the screen.
         Program* sceneProgram;
         /// The player world.

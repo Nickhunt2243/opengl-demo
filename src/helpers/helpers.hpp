@@ -179,4 +179,13 @@ inline void checkOpenGLError(const std::string& location) {
  * @return:       A Boolean value of whether the block exists.
  */
 bool blockExists(Craft::BlockInfo info, std::unordered_map<Craft::Coordinate2D<int>, std::unordered_map<Craft::Coordinate<int>, Craft::Block>*>* coords);
+/**
+ * Given the x or z coordinate calculate the chunksPos between [0, TOTAL_CHUNK_WIDTH)
+ *
+ * Used for indexing the chunk buffer objects.
+ *
+ * @param coord: The X or Z Coordinate of the chunk.
+ * @return:      A normalized coordinate from [0, TOTAL_CHUNK_WIDTH)
+ */
+int findChunkIdx(int coord);
 #endif //OPENGLDEMO_HELPERS_HPP
