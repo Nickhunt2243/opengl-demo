@@ -102,6 +102,7 @@ namespace Craft
          * @param info: The info of the block being updated.
          */
         void updateNeighbors(BlockInfo info);
+        void updateNeighborsCreatedBlock(BlockInfo info);
     private:
         /// The Buffers and Array Objects.
         GLuint VAO{0};

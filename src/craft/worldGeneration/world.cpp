@@ -111,6 +111,25 @@ namespace Craft
             }
         }
     }
+    void World::updateNeighborsCreatedBlock(BlockInfo info)
+    {
+        // Construct neighbor info:
+        for (int side=0; side<SIDES_PER_BLOCK; side++)
+        {
+            int chunkIdx = chunks[info.chunk]->chunkIdx;
+            int chunkOffset = chunkIdx * BLOCKS_IN_CHUNK;
+            int blockIdx = chunkOffset + (info.block.y * CHUNK_SIZE) + (info.block.z * CHUNK_WIDTH) + info.block.x;
+            int sideOffset = side * TOTAL_MAX_CHUNKS;
+            NeighborInfo neighborInfo = blockSSBOPointer[blockIdx];
+            if ((neighborInfo.sideData & 1) == 1)
+            {
+                int sideIdx = sideOffset + chunkIdx;
+                idxSSBOPointer[(side * BLOCKS_IN_WORLD) + chunkOffset + instanceCount[sideIdx]] = blockIdx;
+                instanceCount[sideIdx] += 1;
+                drawCommandBufferPointer[sideIdx].instanceCount = instanceCount[sideIdx];
+            }
+        }
+    }
     void World::appendAdditionalAffectedChunks(BlockInfo info)
     {
         if (info.block.x == 0)
@@ -151,11 +170,10 @@ namespace Craft
                 auto chunkIter = world->chunks.find(info.chunk);
                 if (chunkIter != world->chunks.end())
                 {
-
                     world->chunksToUpdateAmbientInfo.push_back(info.chunk);
-                    world->updateNeighbors(info);
                     world->appendAdditionalAffectedChunks(info);
                     world->calcAmbientOcclusionInfo();
+                    world->updateNeighbors(info);
                     chunkIter->second->deleteBlock(info.block, world->blockSSBOPointer);
                 }
             }
@@ -171,11 +189,10 @@ namespace Craft
                 if (chunkIter != world->chunks.end())
                 {
                     chunkIter->second->createBlock(info.block, world->textures, world->blockSSBOPointer);
-                    world->chunksToUpdateNeighborInfo.push_back(info.chunk);
                     world->chunksToUpdateAmbientInfo.push_back(info.chunk);
                     world->appendAdditionalAffectedChunks(info);
-                    world->calcNeighborInfo();
                     world->calcAmbientOcclusionInfo();
+                    world->updateNeighborsCreatedBlock(info);
                 }
             }
         }
@@ -403,42 +420,50 @@ namespace Craft
             std::lock_guard<std::mutex> lock(chunkVBOMutex);
             for (auto& chunkCoord: chunksToUpdateVBOInfo)
             {
-                for (int side=0; side<SIDES_PER_BLOCK; side++)
-                {
+//                for (int side=0; side<SIDES_PER_BLOCK; side++)
+//                {
                     Chunk* chunk = chunks[chunkCoord].get();
                     int chunkIdx = chunk->chunkIdx;
                     int chunkOffset = chunk->chunkIdx * BLOCKS_IN_CHUNK;
-                    int sideOffset = side * TOTAL_MAX_CHUNKS;
                     futures.emplace_back(
-                        pool.enqueue([this, chunk, side, sideOffset, chunkOffset, chunkIdx]() {
+                        pool.enqueue([this, chunk, chunkOffset, chunkIdx]() {
+
                             std::lock_guard<std::mutex> lock(chunkMutex);
-                            int blockIdx;
-                            for (auto &block: chunk->blocksMap) {
-                                blockIdx = chunkOffset + (block.first.y * CHUNK_SIZE) +
-                                           (block.first.z * CHUNK_WIDTH) + block.first.x;
-                                NeighborInfo info = blockSSBOPointer[blockIdx];
-                                if ((info.sideData & 1) == 1)
+                            for (int side=0; side<SIDES_PER_BLOCK; side++)
+                            {
+                                int sideOffset = side * TOTAL_MAX_CHUNKS;
+                                int blockIdx;
+                                for (auto &block: chunk->blocksMap)
                                 {
-                                    int sideShift = side + 1;
-                                    if (((info.sideData >> sideShift) & 1) == 1)
-                                    {
-                                        int sideIdx = sideOffset + chunkIdx;
-                                        idxSSBOPointer[(side * BLOCKS_IN_WORLD) + chunkOffset + instanceCount[sideIdx]] = blockIdx;
-                                        instanceCount[sideIdx] += 1;
+                                    blockIdx = chunkOffset + (block.first.y * CHUNK_SIZE) +
+                                               (block.first.z * CHUNK_WIDTH) + block.first.x;
+                                    NeighborInfo info = blockSSBOPointer[blockIdx];
+                                    if ((info.sideData & 1) == 1) {
+                                        int sideShift = side + 1;
+                                        if (((info.sideData >> sideShift) & 1) == 1) {
+                                            int sideIdx = sideOffset + chunkIdx;
+                                            idxSSBOPointer[(side * BLOCKS_IN_WORLD) + chunkOffset +
+                                                           instanceCount[sideIdx]] = blockIdx;
+                                            instanceCount[sideIdx] += 1;
+                                        }
                                     }
                                 }
                             }
 
-                            // Update Draw Commands:
-                            DrawArraysIndirectCommand currCommand{};
-                            currCommand.first = side * VERTICES_PER_SIDE;
-                            currCommand.count = VERTICES_PER_SIDE;
-                            currCommand.instanceCount = instanceCount[sideOffset + chunkIdx];
-                            currCommand.baseInstance = (side * BLOCKS_IN_WORLD) + chunkOffset;
-                            drawCommandBufferPointer[sideOffset + chunkIdx] = currCommand;
+                            for (int side=0; side<SIDES_PER_BLOCK; side++)
+                            {
+                                int sideOffset = side * TOTAL_MAX_CHUNKS;
+                                // Update Draw Commands:
+                                DrawArraysIndirectCommand currCommand{};
+                                currCommand.first = side * VERTICES_PER_SIDE;
+                                currCommand.count = VERTICES_PER_SIDE;
+                                currCommand.instanceCount = instanceCount[sideOffset + chunkIdx];
+                                currCommand.baseInstance = (side * BLOCKS_IN_WORLD) + chunkOffset;
+                                drawCommandBufferPointer[sideOffset + chunkIdx] = currCommand;
+                            }
                         })
                     );
-                }
+//                }
             }
             futures.erase(
                 std::remove_if(

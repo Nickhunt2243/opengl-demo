@@ -7,20 +7,20 @@ Welcome to the OpenGL Demo project! This project is a learning exercise inspired
 #### Aerial view with simple borders for better perspective.
 ![areal_shot](external_assets/progress_images/aerial_shot_terrain.png)
 
-#### Video of ground view w/ collision.
-[Minecraft_Clone_Collision.mp4](external_assets/progress_images/Minecraft_Clone_Collision.mp4)
+#### Most recent demo:
+[Most Recent Updates On Youtube](https://www.youtube.com/watch?v=nKIjua3wax8)
 ## Getting Started
 
 ### Prerequisites
 
 Before you can build and run this project, you need to have the following libraries installed:
 
-- **OpenGL**: Version 3.3
+- **OpenGL**: Version 4.6
 - **GLM**: Version 1.0.1
 - **GLFW**: Version 3.4
 - **GLAD**: Generated version 0.1.36 from [GLAD generator](https://glad.dav1d.de/)
 - **nlohmann_json**: Version 3.11.3 (just the json.h)
-- **stb_image**: Version 2.29 
+- **stb_image**: Version 2.29
 
 ### Project Structure
 
@@ -108,7 +108,7 @@ You can use:
 - space &#8594; jump or fly up.
 - left shift &#8594; fly down (when enabled)
 
-Additionally, you can use the mouse to look around.
+Additionally, you can use the mouse to look around, left click will delete blocks, and right click will place them.
 
 ### Project Structure
 
