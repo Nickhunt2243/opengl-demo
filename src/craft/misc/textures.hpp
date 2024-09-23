@@ -33,7 +33,7 @@ namespace Craft
          */
         bool initTextures(GLuint program);
         /// A mapping of BlockType enum to a struct containing the block's texture information.
-        std::unordered_map<BlockType, blockTexture> textureMapping{};
+        std::unordered_map<BlockType, BlockTexture> textureMapping{};
     private:
         /**
          * Initialize the image data into a Sampler2DArray object where each layer is a different texture.

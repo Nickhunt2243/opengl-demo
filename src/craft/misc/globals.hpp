@@ -10,9 +10,11 @@ namespace Craft
     /*  World Information Globals  */
     const int CHUNK_WIDTH = 16;
     const int CHUNK_HEIGHT = 256;
-    const int VISIBLE_CHUNKS = 5;
+    const int RENDER_DISTANCE = 2 ;
     const int CHUNK_BASE_HEIGHT = 100;
-    const float CHUNK_OFFSET = 0.5f;
+    const int VERTICES_PER_BLOCK = 36;
+    const int SIDES_PER_BLOCK = 6;
+    const int VERTICES_PER_SIDE = 6;
 
     /*  Player Globals  */
     const long double PLAYER_FRONT_BOUND = 0.15l;
@@ -33,12 +35,12 @@ namespace Craft
     const float TIME_CONVERSION = 1.0f / 13.8f; /* Each 1s in Minecraft is 13.8 ms in real time. */
 
     /*  Const Expressions  */
-    constexpr int CHUNK_BOUNDS = (VISIBLE_CHUNKS - 1) / 2;
-    constexpr int MAX_STORED_CHUNKS = VISIBLE_CHUNKS;
+//    constexpr int CHUNK_BOUNDS = ;
     constexpr int CHUNK_SIZE = CHUNK_WIDTH * CHUNK_WIDTH;
-    constexpr int TOTAL_MAX_CHUNKS = MAX_STORED_CHUNKS * MAX_STORED_CHUNKS;
-    constexpr int MAX_WORLD_BLOCKS = TOTAL_MAX_CHUNKS * CHUNK_SIZE * CHUNK_HEIGHT;
-    constexpr int MAX_BLOCKS = CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT;
+    constexpr int TOTAL_CHUNK_WIDTH = RENDER_DISTANCE + RENDER_DISTANCE + 1;
+    constexpr int TOTAL_MAX_CHUNKS = TOTAL_CHUNK_WIDTH * TOTAL_CHUNK_WIDTH;
+    constexpr int BLOCKS_IN_CHUNK = CHUNK_WIDTH * CHUNK_WIDTH * CHUNK_HEIGHT;
+    constexpr int BLOCKS_IN_WORLD = BLOCKS_IN_CHUNK * TOTAL_MAX_CHUNKS;
     constexpr float M_PI = 3.14159265358979323846f;
     constexpr float M_PI_4 = M_PI / 4.0f;
 

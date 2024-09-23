@@ -52,22 +52,6 @@ namespace Engine
 
     bool Compute::initCompute()
     {
-
-        GLint workGroupSize[3];
-        glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &workGroupSize[0]); // X dimension
-        glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &workGroupSize[1]); // Y dimension
-        glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &workGroupSize[2]); // Z dimension
-
-        GLint maxInvocations;
-        glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &maxInvocations); // Total invocations
-
-        std::cout << "Max Compute Work Group Size (X, Y, Z): ("
-                  << workGroupSize[0] << ", "
-                  << workGroupSize[1] << ", "
-                  << workGroupSize[2] << ")\n";
-
-        std::cout << "Max Compute Work Group Invocations: "
-                  << maxInvocations << "\n";
         program = glCreateProgram();
 
 

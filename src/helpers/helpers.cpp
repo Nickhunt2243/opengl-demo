@@ -5,6 +5,7 @@
 #include <filesystem>
 
 #include "helpers.hpp"
+#include "../craft/misc/globals.hpp"
 
 std::string getFileContents(const char* path)
 {
@@ -106,15 +107,22 @@ void setVec2(GLuint program, const std::string &name, glm::vec2 value)
     GLint loc = getLoc(program, name);
     glUniform2fv(loc, 1, glm::value_ptr(value));
 }
-void setiVec2(GLuint program, const std::string &name, glm::vec2 value)
+void setiVec2(GLuint program, const std::string &name, glm::ivec2 value)
 {
     GLint loc = getLoc(program, name);
-    glUniform2iv(loc, 1, (const int *) glm::value_ptr(value));
+    glUniform2iv(loc, 1, glm::value_ptr(value));
 }
 void setVec3(GLuint program, const std::string &name, glm::vec3 value)
 {
+    glUseProgram(program);
     GLint loc = getLoc(program, name);
     glUniform3fv(loc, 1, glm::value_ptr(value));
+}
+void setiVec3(GLuint program, const std::string &name, glm::ivec3 value)
+{
+    glUseProgram(program);
+    GLint loc = getLoc(program, name);
+    glUniform3iv(loc, 1, glm::value_ptr(value));
 }
 void setVec4(GLuint program, const std::string &name, glm::vec4 value)
 {
@@ -171,4 +179,23 @@ Craft::BlockInfo getBlockInfo(Craft::Coordinate<int> block, Craft::Coordinate2D<
         info.chunk.x += 1;
     }
     return info;
+}
+bool blockExists(
+        Craft::BlockInfo info,
+        std::unordered_map<Craft::Coordinate2D<int>, std::unordered_map<Craft::Coordinate<int>, Craft::Block>*>* coords
+    )
+{
+    auto chunkIter = coords->find(info.chunk);
+    if (chunkIter == coords->end()) return false;
+    return chunkIter->second->find(info.block) != chunkIter->second->end();
+}
+int findChunkIdx(int coord) {
+    if ((coord + Craft::RENDER_DISTANCE) < 0)
+    {
+        return ((((((coord + Craft::RENDER_DISTANCE) * -1) % Craft::TOTAL_CHUNK_WIDTH) * -1) + Craft::TOTAL_CHUNK_WIDTH) % Craft::TOTAL_CHUNK_WIDTH);
+    }
+    else
+    {
+        return (((coord + Craft::RENDER_DISTANCE) % Craft::TOTAL_CHUNK_WIDTH) + Craft::TOTAL_CHUNK_WIDTH) % Craft::TOTAL_CHUNK_WIDTH;
+    }
 }

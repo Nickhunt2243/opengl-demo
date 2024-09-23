@@ -62,7 +62,7 @@ namespace Craft
         /// The game timer.
         Engine::Timer* timer;
         /// The type of vertical movement the player is experiencing.
-        EntityVertMovementType vertMovement{EntityVertMovementType::STATIONARY};
+        EntityVertMovementType vertMovement{EntityVertMovementType::FLYING};
         /// The bounds of the given entity.
         EntityBounds entityBounds;
         /**

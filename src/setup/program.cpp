@@ -72,7 +72,7 @@ namespace Engine
                               : isGeomShader
                               ? "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n"
                               : "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n";
-            std::cerr << msg << infoLog << std::endl;
+            std::cout << msg << infoLog << std::endl;
             return false;
         }
         return true;
@@ -82,13 +82,17 @@ namespace Engine
     {
         program = glCreateProgram();
         if (!genShader(vertexShaderName)) return false;
+        if (!geometryShaderName.empty() && !genShader(geometryShaderName)) return false;
         if (!genShader(fragmentShaderName)) return false;
 
         int success;
         char infoLog[512];
         glAttachShader(program, vertShader);
         glAttachShader(program, fragShader);
-
+        if (geomShader != 0)
+        {
+            glAttachShader(program, geomShader);
+        }
         glLinkProgram(program);
         glGetProgramiv(program, GL_LINK_STATUS, &success);
         if(!success)

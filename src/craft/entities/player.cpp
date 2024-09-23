@@ -7,7 +7,7 @@
 
 namespace Craft {
     long double playerInitialX = 13,
-                playerInitialY = 103l,
+                playerInitialY = 110l,
                 playerInitialZ = 10;
 
     Player::Player(
@@ -51,7 +51,7 @@ namespace Craft {
     }
     Coordinate<int> Player::getNextLookAtBlock() const
     {
-        std::cout << "Current: " << *lookAtBlock << std::endl;
+//        std::cout << "Current: " << *lookAtBlock << std::endl;
         switch (lookAtSide)
         {
             case BlockSideType::X_MAX:
@@ -113,6 +113,8 @@ namespace Craft {
     }
     Coordinate2D<int> Player::updatePlayer()
     {
+
+//        std::cout << Coordinate<int>{(int) entityX + (originChunk.x * 16), (int) entityY - 2, (int) entityZ + (originChunk.z * 16)} << std::endl;
         glm::vec3 cameraPos = glm::vec3{entityX + (originChunk.x * 16), entityY, entityZ + (originChunk.z * 16)};
         glm::vec3 cameraFront = camera.getCameraFront();
 
@@ -273,7 +275,7 @@ namespace Craft {
         blockProgram->useProgram();
         if (lookAtBlock != nullptr)
         {
-            setVec3(blockProgram->getProgram(), "u_lookAtBlock", *lookAtBlock);
+            setiVec3(blockProgram->getProgram(), "u_lookAtBlock", *lookAtBlock);
             setBool(blockProgram->getProgram(), "u_hasLookAt", true);
         }
         else
@@ -366,11 +368,7 @@ namespace Craft {
             int chunkBlockZ = nextBlockZ - (chunkPos.z * 16);
             BlockInfo info = getBlockInfo({chunkBlockX, nextBlockY, chunkBlockZ}, chunkPos);
             // Checking if is block.
-            bool isBlock;
-            {
-                std::lock_guard<std::mutex> lock(*coordsMutex);
-                isBlock = (*coords->at(info.chunk)).find(info.block) != (*coords->at(info.chunk)).end();
-            }
+            bool isBlock = blockExists(info, coords);
             if (
                     isBlock && (lookAtBlock == nullptr ||
                     lookAtBlock->x != nextBlockX || lookAtBlock->y != nextBlockY || lookAtBlock->z != nextBlockZ)

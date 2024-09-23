@@ -10,6 +10,7 @@
 #include <iostream>
 
 #include "../craft/misc/types.hpp"
+#include "../craft/worldGeneration/block.hpp"
 
 /// A struct containing information about a loaded image.
 struct ImageData {
@@ -29,11 +30,20 @@ struct ImageData {
 /**
  * A struct to hold information on an images texture
  */
-struct ImageLoadResult {
+struct ImageLoadResult
+{
     /// The layer of the texture in the Sampler2DArray.
     GLuint layer;
     /// A mapping of block type to the faces the texture should be used with.
     std::unordered_map<std::string, std::vector<std::string>> blockTypeToFaces;
+    /// A struct containing the ImageData.
+    ImageData *imageData;
+};
+struct ColorMapLoadResults
+{
+    /// The layer of the texture in the Sampler2DArray.
+    GLuint layer;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::vector<std::string>>> blockTypeToFacesAndUVs;
     /// A struct containing the ImageData.
     ImageData *imageData;
 };
@@ -108,7 +118,7 @@ void setVec2(GLuint program, const std::string &name, glm::vec2 value);
  * @param name:    The name of the shader parameter.
  * @param value:   The value to set.
  */
-void setiVec2(GLuint program, const std::string &name, glm::vec2 value);
+void setiVec2(GLuint program, const std::string &name, glm::ivec2 value);
 /**
  * Set a 3x1 vector within the OpenGL program.
  *
@@ -117,6 +127,14 @@ void setiVec2(GLuint program, const std::string &name, glm::vec2 value);
  * @param value:   The value to set.
  */
 void setVec3(GLuint program, const std::string &name, glm::vec3 value);
+/**
+ * Set a 3x1 integer vector within the OpenGL program.
+ *
+ * @param program: The given OpenGL program identifier.
+ * @param name:    The name of the shader parameter.
+ * @param value:   The value to set.
+ */
+void setiVec3(GLuint program, const std::string &name, glm::ivec3 value);
 /**
  * Set a 4x1 vector within the OpenGL program.
  *
@@ -152,9 +170,22 @@ bool setMat4(GLuint program, const std::string &name, glm::mat4& value);
 Craft::BlockInfo getBlockInfo(Craft::Coordinate<int> block, Craft::Coordinate2D<int> chunkPos);
 /// Helper function for checking opengl errors.
 inline void checkOpenGLError(const std::string& location) {
-    GLenum error;
-    while ((error = glGetError()) != GL_NO_ERROR) {
-        std::cerr << "OpenGL Error " << error << " at " << location << std::endl;
-    }
+    std::cerr << "OpenGL Error " << glGetError() << " at " << location << std::endl;
 }
+/**
+ * Retrieve whether a block exists in the world given its chunk and chunk relative coordinate.
+ * @param info:   The blocks chunk and chunk relative coordinate.
+ * @param coords: The mapping of chunks to a mapping of chunk rel block coordinates to blocks.
+ * @return:       A Boolean value of whether the block exists.
+ */
+bool blockExists(Craft::BlockInfo info, std::unordered_map<Craft::Coordinate2D<int>, std::unordered_map<Craft::Coordinate<int>, Craft::Block>*>* coords);
+/**
+ * Given the x or z coordinate calculate the chunksPos between [0, TOTAL_CHUNK_WIDTH)
+ *
+ * Used for indexing the chunk buffer objects.
+ *
+ * @param coord: The X or Z Coordinate of the chunk.
+ * @return:      A normalized coordinate from [0, TOTAL_CHUNK_WIDTH)
+ */
+int findChunkIdx(int coord);
 #endif //OPENGLDEMO_HELPERS_HPP

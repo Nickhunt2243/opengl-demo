@@ -4,12 +4,13 @@
 
 #include "app.hpp"
 #include "../craft/misc/textures.hpp"
+#include "../craft/misc/coordinate.hpp"
 
 #define WINDOW_WIDTH 1500
 #define WINDOW_HEIGHT 1000
 
 #define BLOCK_VERT_SHADER_PATH "src/assets/shader/block.vert"
-#define BLOCK_GEOM_SHADER_PATH "src/assets/shader/block.geom"
+#define BLOCK_GEOM_SHADER_PATH ""//src/assets/shader/block.geom"
 #define BLOCK_FRAG_SHADER_PATH "src/assets/shader/block.frag"
 #define WORLD_VERT_SHADER_PATH "src/assets/shader/default.vert"
 #define WORLD_GEOM_SHADER_PATH ""
@@ -21,6 +22,7 @@
 #define SCENE_GEOM_SHADER_PATH ""
 #define SCENE_FRAG_SHADER_PATH "src/assets/shader/scene.frag"
 #define NEIGHBOR_COMP_SHADER_PATH "src/assets/shader/neighbor.comp"
+#define AMBIENT_COMP_SHADER_PATH "src/assets/shader/ambient.comp"
 
 namespace Engine
 {
@@ -31,7 +33,8 @@ namespace Engine
         , orthoProgram{new Program(ORTHO_VERT_SHADER_PATH, ORTHO_GEOM_SHADER_PATH, ORTHO_FRAG_SHADER_PATH)}
         , sceneProgram{new Program(SCENE_VERT_SHADER_PATH, SCENE_GEOM_SHADER_PATH, SCENE_FRAG_SHADER_PATH)}
         , neighborCompute{new Compute(NEIGHBOR_COMP_SHADER_PATH)}
-        , world{new Craft::World(&window, program, worldProgram, neighborCompute, WINDOW_WIDTH, WINDOW_HEIGHT)}
+        , ambientOccCompute{new Compute(AMBIENT_COMP_SHADER_PATH)}
+        , world{new Craft::World(&window, program, worldProgram, neighborCompute, ambientOccCompute, WINDOW_WIDTH, WINDOW_HEIGHT)}
         , crossHair{new Craft::CrossHair(orthoProgram, &window)}
     {}
     Application::~Application()
@@ -39,6 +42,7 @@ namespace Engine
         delete crossHair;
         delete world;
         delete neighborCompute;
+        delete ambientOccCompute;
         delete worldProgram;
         delete orthoProgram;
         delete program;
@@ -126,9 +130,21 @@ namespace Engine
             std::cerr << "Failed to initialize neighbors compute." << std::endl;
             return false;
         }
+        if (!ambientOccCompute->initCompute())
+        {
+            std::cerr << "Failed to initialize neighbors compute." << std::endl;
+            return false;
+        }
 
         // Initialize the ProjT.
         projMatrix = glm::perspective(glm::radians(80.0f), ((float) WINDOW_WIDTH /  (float) WINDOW_HEIGHT), 0.1f, 4000.0f);
+//        glfwSwapInterval(0);
+
+        program->useProgram();
+        setMat4(program->getProgram(), "u_projT", projMatrix);
+
+        worldProgram->useProgram();
+        setMat4(worldProgram->getProgram(), "u_projT", projMatrix);
 
         initFBO();
         initQuad();
@@ -140,11 +156,6 @@ namespace Engine
     }
     void Application::updateScene()
     {
-        program->useProgram();
-        setMat4(program->getProgram(), "u_projT", projMatrix);
-        worldProgram->useProgram();
-        setMat4(worldProgram->getProgram(), "u_projT", projMatrix);
-
         world->updateWorld();
     }
     void Application::drawScene()
@@ -186,7 +197,6 @@ namespace Engine
             glfwSwapBuffers(window.getWindow());
             // Poll for mouse and keyboard events
             glfwPollEvents();
-
         }
     }
 }

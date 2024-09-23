@@ -41,7 +41,10 @@ namespace Engine
     }
     float Timer::getFPS()
     {
-
         return frames / (getElapsedTime() / 1000);
+    }
+    int Timer::getFrames()
+    {
+        return (int) frames;
     }
 }
