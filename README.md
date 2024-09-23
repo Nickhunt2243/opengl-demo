@@ -3,17 +3,16 @@
 Welcome to the OpenGL Demo project! This project is a learning exercise inspired by the tutorials on [Learn OpenGL](https://learnopengl.com/). As I progress through the tutorials, I will be updating and expanding this repository.
 
 ## Preview
-### Below are two images of 21x21 chunks, each containing 16 x 16 x 128 blocks.
-#### Aerial view with simple borders for better perspective.
-![areal_shot](external_assets/progress_images/aerial_shot_terrain.png)
-
-#### Most recent demo:
+### Below are two images of 41x41 chunks, each containing 16 x 16 x 128 blocks.
+#### Aerial view.
+![areal_shot](external_assets/progress_images/Mincraft_Clone_World_With_Ambient_Occlusion.png)
+#### Close up. 
+![blocks_close_up](external_assets/progress_images/Minecraft_Clone_w_Ambient_Occlusion.png)
+## Most recent demo:
 [Most Recent Updates On Youtube](https://www.youtube.com/watch?v=nKIjua3wax8)
 ## Getting Started
 
-### Prerequisites
-
-Before you can build and run this project, you need to have the following libraries installed:
+### Libraries in Use
 
 - **OpenGL**: Version 4.6
 - **GLM**: Version 1.0.1
@@ -29,26 +28,24 @@ The project directory structure is organized as follows:
 ```
 OpenGLDemo/
 ├── includes/
-│   ├── GLFW/
-│   │   ├── includes/
-│   │   │   └── <GLFW include files>
-│   │   └── lib-vc2022/
-│   │       └── <GLFW library files>
-│   ├── GLM/
-│   └── GLAD/
+│   └── glad/
 │       ├── include/
 │       └── src/
+│   └── stb/
+│       ├── include/
 ├── src/
 |   ├── assets/
+│   |   ├── json/     ... Json files for configuring textures.
+│   |   ├── shader/   ... All GLSL Shader code.
+|   |   └── textures/ ... Images for textures
 |   ├── craft/
 |   |   └── ... Game related files.
 |   ├── helpers/
 │   ├── setup/
 |   |   └── ... OpenGL and GLFW configuration and set up.
-│   ├── shaders/
 │   └── main.cpp
 ├── CMakeLists.txt
-├── README.md
+├── README.md (Good Job!)
 └── ...
 ```
 
@@ -58,46 +55,49 @@ OpenGLDemo/
 1. Go to the top and click the "Code" drop down.
 2. **Download** the zip file
 3. Extract zip
-5. Go into bin/ and run the OpenGLDemo.exe file.
 
-### Building the Project
+## Running the Project
 
 1. **Clone the Repository**
-
+   
+   With Progress Images and Videos (Download mp4's and png's related to my progress)
    ```bash
    git clone https://github.com/Nickhunt2243/opengl-demo.git
    cd opengl-demo
    ```
-
-2. **Install Dependencies**
-
-   Ensure that you have the required libraries installed on your system. You may need to set the paths for GLM, GLFW, and GLAD in your development environment.
-
-3. **Generate Build Files**
-
-   Use CMake to generate the build files for your preferred build system. For example, to generate Visual Studio project files:
-
-   ```bash
-   mkdir build
-   cd build
-   cmake .. -G "Visual Studio 17 2022" [or whichever Visual Studio version you have.]
+   Without Progress Images and Videos (Less data quicker download times)
+   ```
+   git clone --no-checkout https://github.com/Nickhunt2243/opengl-demo.git
+   cd opengl-demo
+   git sparse-checkout init --cone
+   git sparse-checkout set . includes src
+   git checkout (may result in: Your branch is up to date with 'origin/master'.)
    ```
 
-4. **Build the Project**
 
-   Open the generated project in Visual Studio (or your preferred IDE) and build the project.
+2. **Build and Hopefully Run The Program!**
 
-   Alternatively, you can build from the command line:
+   Use CMake to generate the build files for your preferred build system:
 
    ```bash
-   cmake --build .
-   cd ../Debug
-   OpenGLDemo.exe
+   # Step 1: Configure the project
+   cmake -S . -B build
+
+   # Step 2: Build the project
+   cmake --build build --target OpenGLDemo --config Debug
+   
+   cd Debug
+   OpenGlDemo.exe
+   ```
+   
+   Or simply run
+
+   ```
+   buildhelpers/build.bat (Windows)
+   buildhelpers/build.sh  (MacOS / Linux)
    ```
 
-### Running the Project
-
-After successfully building the project, you can run the executable. The application should open a window and render the scene with a massive cube in front of you.
+## Controls
 
 You can use:
 - w &#8594; Walk Forward
@@ -107,10 +107,10 @@ You can use:
 - f &#8594; Enable/Disable Flying
 - space &#8594; jump or fly up.
 - left shift &#8594; fly down (when enabled)
-
-Additionally, you can use the mouse to look around, left click will delete blocks, and right click will place them.
-
-### Project Structure
+- Left click &#8594; delete block
+- Right click &#8594; place block
+- Move Mouse &#8594; Look Around
+## Project Structure
 
 The project is organized into the following main components:
 
@@ -119,8 +119,8 @@ The project is organized into the following main components:
 - **helpers**: Helper functions to be used globally.
 - **setup**: Code for setting up and running the application (may change name in future).
 
-### Contact
+## Contact
 
-For any questions or inquiries, please contact nickrhunt@yahoo.com.
+For any questions or inquiries, please contact nickrhunt@yahoo.com or reach out to me on [LinkedIn](https://linkedin.com/in/nicholas-r-hunt)
 
 Thank you for checking out this project! Happy coding!
