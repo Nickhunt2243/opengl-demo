@@ -10,7 +10,7 @@
 #define WINDOW_HEIGHT 1000
 
 #define BLOCK_VERT_SHADER_PATH "src/assets/shader/block.vert"
-#define BLOCK_GEOM_SHADER_PATH ""//src/assets/shader/block.geom"
+#define BLOCK_GEOM_SHADER_PATH ""
 #define BLOCK_FRAG_SHADER_PATH "src/assets/shader/block.frag"
 #define WORLD_VERT_SHADER_PATH "src/assets/shader/default.vert"
 #define WORLD_GEOM_SHADER_PATH ""

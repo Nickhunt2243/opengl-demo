@@ -20,7 +20,7 @@ Before you can build and run this project, you need to have the following librar
 - **GLFW**: Version 3.4
 - **GLAD**: Generated version 0.1.36 from [GLAD generator](https://glad.dav1d.de/)
 - **nlohmann_json**: Version 3.11.3 (just the json.h)
-- **stb_image**: Version 2.29 
+- **stb_image**: Version 2.29
 
 ### Project Structure
 
