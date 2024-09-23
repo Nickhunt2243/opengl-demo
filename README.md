@@ -49,13 +49,6 @@ OpenGLDemo/
 └── ...
 ```
 
-### Running the Project
-
-#### Through Cloning / Downloading
-1. Go to the top and click the "Code" drop down.
-2. **Download** the zip file
-3. Extract zip
-
 ## Running the Project
 
 1. **Clone the Repository**
@@ -93,7 +86,7 @@ OpenGLDemo/
    Or simply run
 
    ```
-   cd buildhelpers & build.bat (Windows)
+   .\buildhelpers\build.bat (Windows)
    .\buildhelpers\build.sh  (MacOS / Linux)
    ```
 
