@@ -15,7 +15,7 @@ Welcome to the OpenGL Demo project! This project is a learning exercise inspired
 
 Before you can build and run this project, you need to have the following libraries installed:
 
-- **OpenGL**: Version 3.3
+- **OpenGL**: Version 4.6
 - **GLM**: Version 1.0.1
 - **GLFW**: Version 3.4
 - **GLAD**: Generated version 0.1.36 from [GLAD generator](https://glad.dav1d.de/)
