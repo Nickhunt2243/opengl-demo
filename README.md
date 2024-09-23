@@ -93,8 +93,8 @@ OpenGLDemo/
    Or simply run
 
    ```
-   buildhelpers/build.bat (Windows)
-   buildhelpers/build.sh  (MacOS / Linux)
+   cd buildhelpers & build.bat (Windows)
+   .\buildhelpers\build.sh  (MacOS / Linux)
    ```
 
 ## Controls
